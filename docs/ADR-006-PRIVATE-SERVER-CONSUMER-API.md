@@ -11,7 +11,8 @@ OAuth access token using credentials held only in encrypted environment
 variables, invokes the function, and returns the compact KPI contract through a
 same-origin authenticated route.
 
-The browser never receives Google credentials, the script identifier, an Apps
+The production principal must be an owner-authorized Google identity with
+explicit access to the script and its data. The browser never receives Google credentials, the script identifier, an Apps
 Script URL, raw Sheet values, or Master Dataset rows. It receives only KPI,
 hierarchy, risk, insight, quality, and forecast contracts after a valid signed
 dashboard session is established.

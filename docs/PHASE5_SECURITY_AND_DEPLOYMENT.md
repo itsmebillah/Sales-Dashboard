@@ -1,7 +1,7 @@
 # Phase 5 Security and Deployment
 
 Release: Frontend 1.0.0  
-Apps Script deployment: version 3
+Apps Script deployment: version 5
 
 ## Request path
 
@@ -35,7 +35,8 @@ Apps Script KPI response or dashboard component contract.
 
 ## Security controls
 
-- Apps Script Execution API access remains `MYSELF`; there is no anonymous web app.
+- Apps Script Execution API access remains owner-only; there is no anonymous
+  web app or browser-to-Apps-Script route.
 - Secrets are server-only Vercel variables and are absent from Git.
 - CSP, HSTS, frame denial, MIME sniffing denial, referrer, and browser-permission
   headers are set for every route.
