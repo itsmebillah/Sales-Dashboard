@@ -7,7 +7,7 @@ Standalone mobile-first Next.js consumer for the Sales Intelligence Platform.
 - Next.js App Router and TypeScript
 - Tailwind CSS
 - Recharts using live KPI contracts
-- Same-origin authenticated `/api/kpi` proxy to the owner-only Apps Script Execution API
+- Same-origin public `/api/kpi` projection backed by the private Apps Script Execution API
 - No Google Sheets SDK, direct Sheet read, mock data, or hardcoded KPI value
 
 ## Commands
@@ -24,8 +24,5 @@ npm run dev
 - `GOOGLE_OAUTH_CLIENT_ID`
 - `GOOGLE_OAUTH_CLIENT_SECRET`
 - `GOOGLE_OAUTH_REFRESH_TOKEN`
-- `DASHBOARD_PASSWORD` (minimum 12 characters)
-- `SESSION_SECRET` (minimum 32 characters)
-
 All variables are server-only. The browser communicates exclusively with
-same-origin Next.js routes and receives an HTTP-only signed session cookie.
+same-origin Next.js routes and never receives an Apps Script URL or credential.

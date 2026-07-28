@@ -1,12 +1,9 @@
 import { Dashboard } from "@/components/dashboard";
 import { fetchDashboardData } from "@/lib/backend";
-import { hasSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  if (!(await hasSession())) redirect("/login");
   let result;
   try {
     result = { data: await fetchDashboardData(), error: "" };
