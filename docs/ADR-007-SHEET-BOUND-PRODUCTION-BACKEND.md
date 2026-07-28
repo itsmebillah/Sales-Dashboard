@@ -28,9 +28,6 @@ Local tests passed 12/12, and the required functions are present:
 - `runDataEngineSelfTest`
 - `runKpiEngineSelfTest`
 
-Vercel Production `APPS_SCRIPT_ID` was updated to the bound Script ID. OAuth
-now succeeds, proving the prior OAuth-client failure is resolved. `scripts.run`
-currently returns `NOT_FOUND` because the bound Apps Script project has no
-standard GCP project association for the OAuth client's Google Cloud project.
-That association is Google project metadata rather than Apps Script source and
-is not writable through clasp push or the Apps Script content API.
+Vercel uses `APPS_SCRIPT_DEPLOYMENT_ID` with the immutable API executable
+deployment ID. Google's current `scripts.run` specification defines the path as
+`/v1/scripts/{deploymentId}:run`; a Script ID is not valid in that path.

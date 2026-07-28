@@ -20,7 +20,7 @@ npm run dev
 
 ## Required Vercel environment variables
 
-- `APPS_SCRIPT_ID`
+- `APPS_SCRIPT_DEPLOYMENT_ID` (the API executable deployment ID, not Script ID)
 - `GOOGLE_OAUTH_CLIENT_ID`
 - `GOOGLE_OAUTH_CLIENT_SECRET`
 - `GOOGLE_OAUTH_REFRESH_TOKEN`

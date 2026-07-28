@@ -21,7 +21,7 @@ export async function fetchDashboardData(): Promise<DashboardData> {
   }
   const tokenPayload = await tokenResponse.json() as { access_token?: string };
   if (!tokenPayload.access_token) throw new Error("Google authentication returned no access token");
-  const response = await fetch(`https://script.googleapis.com/v1/scripts/${encodeURIComponent(required("APPS_SCRIPT_ID"))}:run`, {
+  const response = await fetch(`https://script.googleapis.com/v1/scripts/${encodeURIComponent(required("APPS_SCRIPT_DEPLOYMENT_ID"))}:run`, {
     method: "POST",
     cache: "no-store",
     headers: { Authorization: `Bearer ${tokenPayload.access_token}`, "Content-Type": "application/json" },

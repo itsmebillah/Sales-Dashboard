@@ -1,10 +1,15 @@
 # Phase 5 Security and Deployment
 
 Release: Frontend 1.0.0  
-Apps Script deployment: Sheet-bound version 24
+Apps Script deployment: Sheet-bound version 25
 
 Production Script ID: `1H88OzmYKwSNSOx8X4K_seVPZkP8xB7EOMUciAdClS5qLEF1s04gyr7oi`
-Production deployment ID: `AKfycbwVab89xreK0Eeo08ZSJ_uUgeMlYk2HYdFQlcJRHDvizvyMtDts78J14dgZ_8zh9_Di`
+Production deployment ID: `AKfycbwnSuWRxPs5wKYLxwVdE6TmU9BAHw5DxhIzSlW7eamSUdNGmWd3jrGm8qPy5t2Bjupy`
+
+The live frontend targets version 25 through
+`APPS_SCRIPT_DEPLOYMENT_ID=AKfycbwnSuWRxPs5wKYLxwVdE6TmU9BAHw5DxhIzSlW7eamSUdNGmWd3jrGm8qPy5t2Bjupy`.
+The Script ID is retained only for clasp project management and must not be used
+as the `scripts.run` path parameter.
 
 ## Request path
 
