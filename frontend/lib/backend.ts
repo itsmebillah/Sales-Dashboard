@@ -27,8 +27,8 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     headers: { Authorization: `Bearer ${tokenPayload.access_token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ function: "getDashboardApi", parameters: ["dashboard"], devMode: false }),
   });
-  if (!response.ok) throw new Error(`Apps Script API responded with HTTP ${response.status}`);
-  const execution = await response.json() as { done?: boolean; error?: { message?: string }; response?: { result?: ApiEnvelope } };
+  const execution = await response.json() as { done?: boolean; error?: { code?: number; message?: string; status?: string }; response?: { result?: ApiEnvelope } };
+  if (!response.ok) throw new Error(`Apps Script API ${execution.error?.status ?? response.status}: ${execution.error?.message ?? "Request failed"}`);
   if (execution.error) throw new Error(execution.error.message ?? "Apps Script execution failed");
   const payload = execution.response?.result;
   if (!payload) throw new Error("Apps Script execution returned no KPI contract");
