@@ -20,7 +20,7 @@ Twelve test groups passed:
 - Attendance compatibility;
 - 100,000-observation aggregation benchmark.
 
-Final observed benchmark: approximately 739 ms locally, below the five-second
+Observed benchmark range: approximately 647–739 ms locally, below the five-second
 verification budget. This is a local comparative benchmark, not an Apps Script
 quota guarantee.
 

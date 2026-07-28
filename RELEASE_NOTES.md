@@ -17,7 +17,7 @@
 - Added KPI self-tests and a 100,000-record performance benchmark.
 
 Verification: 12 automated test groups passed. The final local 100,000-record
-aggregation benchmark completed in approximately 739 ms on the verification
+aggregation benchmark completed in approximately 647–739 ms on the verification
 host, below the five-second budget.
 
 Known issues and certification limits:
