@@ -29,6 +29,9 @@ Known issues and certification limits:
 - Growth is intentionally unavailable for incomplete-vs-full period comparisons.
 - Product mix is source-unit-only until governed UOM conversion exists.
 - No receivable recovery, outstanding, aging or DSO metric is calculated.
+- Remote CLI smoke execution remains blocked by Google owner authorization; the
+  deployed version and required editor-run sequence are recorded in
+  `docs/PHASE4_VERIFICATION.md`.
 
 Next recommendation: authorize and execute `runKpiEngineSelfTest()`, then
 `refreshKpiSnapshot()`, review live diagnostic/coverage results, and approve the
