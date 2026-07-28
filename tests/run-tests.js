@@ -73,9 +73,9 @@ test('detects dynamic headers and duplicate non-day headers', () => {
 function salesFixture() {
   const row1 = ['July\'26'];
   const row2 = [];
-  const row3 = Array(24).fill(''); row3[20] = 'Product A'; row3[21] = 'Product B';
-  const header = ['ID','RSM','TSO','SR','Designation','Dealer SL','AREA/ Point','DL_CD','1','2','3','Sales of July\'26','No. of Order','Current WD','July\'26 Monthly Tgt. Product Wise Value','SR Avg. Working Hour','Average Daily Outlet','','','','500ml','1L'];
-  const data = ['3018','RSM One','TSO One','SR One','SR','137','M/S. Rupali Traders (137)','',100,200,0,300,4,3,1000,'5 Hr 30 Min','','','','',2,3];
+  const row3 = Array(23).fill(''); row3[21] = 'Product A'; row3[22] = 'Product B';
+  const header = ['ID','RSM','TSO','SR','Designation','Dealer SL','AREA/ Point','DL_CD','1','2','3','Sales of July\'26','No. of Order','Current WD','July\'26 Monthly Tgt. Product Wise Value','SR Avg. Working Hour','Sales >June,26','Average Daily Outlet','','','','500ml','1L'];
+  const data = ['3018','RSM One','TSO One','SR One','SR','137','M/S. Rupali Traders (137)','',100,200,0,300,4,3,1000,'5 Hr 30 Min',250,'','','','',2,3];
   return [row1,row2,row3,header,data];
 }
 function liftingFixture() {
@@ -112,6 +112,7 @@ test('parses all sources once, ignores subtotals and emits canonical long record
   const parsed = SIP.ParserEngine.parseAll(sources, context);
   equal(parsed.length, 3);
   equal(parsed[0].records.filter(x => x.metric_id === 'SALES_AMOUNT').length, 3);
+  equal(parsed[0].records.filter(x => x.metric_id === 'HISTORICAL_SALES_AMOUNT').length, 1);
   equal(parsed[1].records.filter(x => x.metric_id === 'LIFTING_AMOUNT').length, 2);
   equal(diagnostics.source('SRC_DEALER_LIFTING').rowsIgnored, 1);
   equal(parsed[2].records.length, 2);
@@ -158,6 +159,60 @@ test('writes and reads chunked cache with checksum validation', () => {
 test('runtime self-test passes including Attendance compatibility', () => {
   const result = sandbox.runDataEngineSelfTest();
   ok(result.passed); equal(result.assertions.length, 5);
+});
+
+test('calculates executive totals, forecast inputs, hierarchy, dealer and product KPIs', () => {
+  const result = sandbox.runKpiEngineSelfTest();
+  ok(result.passed); equal(result.checks, 15);
+});
+
+test('exposes an identical KPI contract at every hierarchy level', () => {
+  const records=[];
+  function rec(id,metric,value,extra={}) { records.push(SIP.Normalizer.masterRecord(Object.assign({
+    recordId:id,sourceDataset:'T',sourceRecordId:id,contractId:'T',moduleId:'SALES',recordType:'OBSERVATION',metricId:metric,
+    eventDate:'2026-07-01',numericValue:value,qualityStatus:'VALID',rsmId:'R',tsoId:'T',srId:'S',employeeId:'S',dealerId:'D'
+  },extra))); }
+  rec('1','SALES_AMOUNT',100); rec('2','TARGET_AMOUNT',200,{recordType:'PLAN'}); rec('3','PRODUCT_QUANTITY',5,{productId:'P',quantity:5});
+  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'B',records,qualityFlags:[]});
+  const entities=['COMPANY','RSM','TSO','SR','DEALER','PRODUCT'].map(t=>snapshot.hierarchy[t][0]);
+  const keys=Object.keys(entities[0]).sort().join('|');
+  entities.forEach(x=>equal(Object.keys(x).sort().join('|'),keys,`contract mismatch for ${x.entityType}`));
+});
+
+test('calculates deterministic risk thresholds and machine insight objects', () => {
+  const k={ 'DEALER|D':{entityType:'DEALER',entityId:'D',sales:100,stock:0,achievementPct:0.5,forecastAchievementPct:0.6,momentumPct:-0.3,growthPct:-0.25,collectionFlowRatioPct:0.2,forecastBase:{certification:'BASELINE',confidenceInputs:{confidenceScore:0.2}}} };
+  const risks=SIP.RiskEngine.evaluate(k,{});
+  ok(risks.some(x=>x.type==='StockRisk'&&x.severity==='HIGH'));
+  ok(risks.some(x=>x.type==='TargetRisk'&&x.value===0.5));
+  ok(risks.every(x=>x.machineReadable===true));
+});
+
+test('aggregates 100,000 canonical observations within the local performance budget', () => {
+  const records=Array.from({length:100000},(_,i)=>({
+    record_id:`R${i}`,source_dataset:'T',source_record_id:String(i),contract_id:'T',module_id:'SALES',record_type:'OBSERVATION',
+    metric_id:'SALES_AMOUNT',event_date:`2026-07-${String((i%28)+1).padStart(2,'0')}`,numeric_value:1,amount:1,quality_status:'VALID',
+    company_id:'COMPANY:DEFAULT',rsm_id:`R${i%10}`,tso_id:`T${i%50}`,sr_id:`S${i%500}`,employee_id:`S${i%500}`,dealer_id:`D${i%1000}`
+  }));
+  const start=Date.now();
+  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'PERF',records,qualityFlags:[]});
+  const elapsed=Date.now()-start;
+  equal(snapshot.executive.sales,100000);
+  equal(snapshot.hierarchy.DEALER.length,1000);
+  ok(elapsed<5000,`100k aggregation took ${elapsed}ms`);
+  console.log(`INFO 100k KPI benchmark: ${elapsed}ms`);
+});
+
+test('rejects a KPI cache generation from an older Master Dataset batch', () => {
+  cache.clear();
+  const kpiConfig=SIP.Config.get({cache:{namespace:'SIP_KPI_V1',chunkChars:1000,maxChunks:20,ttlSeconds:60}});
+  SIP.CacheEngine.put({batchId:'OLD',generatedAt:'2026-07-27',records:[],risks:[]},kpiConfig,new SIP.Diagnostics());
+  const original=SIP.DataEngine.get;
+  SIP.DataEngine.get=()=>({master:{schemaVersion:'1.0.0',batchId:'NEW',records:[],qualityFlags:[]},cache:{hit:true}});
+  try {
+    const result=SIP.KpiService.get({config:{cache:{chunkChars:1000,maxChunks:20,ttlSeconds:60}},writeDiagnostics:false});
+    equal(result.snapshot.batchId,'NEW');
+    ok(result.diagnostics.issues.some(x=>x.code==='KPI_CACHE_STALE'));
+  } finally { SIP.DataEngine.get=original; }
 });
 
 process.on('exit', () => {

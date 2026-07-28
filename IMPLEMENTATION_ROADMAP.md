@@ -1,5 +1,15 @@
 # Implementation Roadmap
 
+## Current delivery status
+
+- Phase 1 — Discovery and data audit: complete.
+- Phase 2 — BI specification and platform architecture: complete.
+- Phase 3 — Enterprise Data Engine: implemented and deployed.
+- Phase 4 — KPI and Business Calculation Engine: implemented; deterministic
+  tests, performance benchmark, governed metric-registry update, and deployment
+  verification are recorded in the Phase 4 release documents.
+- Dashboard implementation remains unstarted and requires explicit approval.
+
 This roadmap is a design handoff only. No implementation is included.
 
 ## Gate 0 — Audit approval

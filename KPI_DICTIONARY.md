@@ -1,5 +1,23 @@
 # KPI Dictionary
 
+## Phase 4 implementation contract
+
+The authoritative calculation source is `SIP.KpiEngine` v1.0.0. Every entity
+level—Company, RSM, TSO, SR, Dealer and Product—returns the same KPI contract.
+Aggregation is performed once from accepted Master Dataset records; modules do
+not recalculate formulas independently.
+
+Implemented baseline fields include Sales, Target, Achievement, Gap, forecast,
+forecast achievement, required/average daily Sales, working days, entity counts,
+Collection, Projection, Lifting, Stock, Secondary, orders, comparable growth,
+momentum, Collection flow ratio, product volume/mix, rank, contribution, trend,
+forecast inputs and certification state.
+
+Growth is deliberately `null` until the current period is comparable with the
+closed historical period. This prevents MTD Sales from being misrepresented as
+full-month growth. Collection flow metrics remain operational proxies and are
+never labeled receivable recovery or outstanding.
+
 ## Rules
 
 Notation: `A` actual Sales, `T` monthly Target, `WD_e` elapsed working days, `WD_t` total working days, `WD_r = WD_t - WD_e`, `L` Lifting, `S2` Secondary, `C` Collection, `P` submitted Projection, `Stock` dealer stock. Ratios return null when the denominator is zero. All comparisons require identical scope and cutoff. “Available” means computable after Phase 3 normalization; “conditional” requires definition validation or stronger joins.

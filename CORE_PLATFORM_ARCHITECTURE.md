@@ -12,6 +12,12 @@ The source staging sheets remain outside the canonical core:
 
 `Source → Source Registry → Parser Contract → Quality Rules → Master Dataset → Metric Store/Consumers`
 
+The Phase 4 semantic path is:
+
+`Cached Master Dataset → one-pass KPI Accumulator → shared formulas → hierarchy contracts → forecast inputs/risk/insights → KPI Cache → consumers`
+
+No KPI module reads raw sheets or recalculates another module's formula.
+
 Reference resolution uses `Master Lookup`, `Calendar`, `Hierarchy` and `Relationship Model`. These enrich and govern the canonical records; they do not create competing facts.
 
 ## Frozen core

@@ -36,6 +36,9 @@ SIP.SalesParser = (function () {
       addNamedMetric(records, base, row, header, ['JULY_26_MONTHLY_TGT_PRODUCT_WISE_VALUE', 'MONTHLY_TGT_PRODUCT_WISE_VALUE'], 'TARGET_AMOUNT', context, 'PLAN');
       addNamedMetric(records, base, row, header, ['NO_OF_ORDER'], 'ORDER_COUNT', context);
       addNamedMetric(records, base, row, header, ['CURRENT_WD'], 'WORKING_DAYS_ELAPSED', context);
+      addNamedMetric(records, base, row, header, ['DUE_WD'], 'DUE_WORKING_DAYS', context);
+      addNamedMetric(records, base, row, header, ['TOTAL_WD'], 'TOTAL_WORKING_DAYS', context);
+      addHistoricalMetrics(records, base, row, header, context);
       var workHoursIndex = H.find(header.columns, ['SR_AVG_WORKING_HOUR']);
       if (workHoursIndex >= 0) {
         var minutes = N.workingHours(row[workHoursIndex]);
@@ -77,6 +80,28 @@ SIP.SalesParser = (function () {
   }
 
   function findPrefix(keys, prefix) { for (var i = 0; i < keys.length; i++) if (keys[i].indexOf(prefix) === 0) return i; return -1; }
+
+  function addHistoricalMetrics(records, base, row, header, context) {
+    header.keys.forEach(function (key, index) {
+      if (key.indexOf('SALES_') !== 0 || key.indexOf('SALES_OF_') === 0) return;
+      var period = historicalPeriod(key); if (!period) return;
+      var value = U.number(row[index], context.config.parser.blankTokens); if (value === null) return;
+      records.push(C.metricRecord(base, 'HISTORICAL_SALES_AMOUNT', value, period.end, 'HIST_' + period.start, {
+        periodStart: period.start, periodEnd: period.end,
+        attributes: Object.assign({}, base.attributes || {}, { historicalPeriod: period.start.slice(0, 7), sourceHeader: key })
+      }));
+    });
+  }
+
+  function historicalPeriod(key) {
+    var match = key.match(/^SALES_([A-Z]+)_((?:20)?\d{2})$/); if (!match) return null;
+    var months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    var month = months.indexOf(match[1].slice(0, 3)) + 1; if (!month) return null;
+    var year = Number(match[2]); if (year < 100) year += 2000;
+    var start = year + '-' + String(month).padStart(2, '0') + '-01';
+    var end = year + '-' + String(month).padStart(2, '0') + '-' + new Date(Date.UTC(year, month, 0)).getUTCDate();
+    return { start: start, end: end };
+  }
 
   function buildProductMeta(rows, headerIndex, start) {
     var out = []; if (start < 0) return out;
