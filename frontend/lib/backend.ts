@@ -4,7 +4,7 @@ import type { ApiEnvelope, DashboardData } from "@/lib/types";
 function required(name: string) {
   const value = process.env[name];
   if (!value) throw new Error(`Missing required server configuration: ${name}`);
-  return value;
+  return value.trim();
 }
 
 export async function fetchDashboardData(): Promise<DashboardData> {
@@ -15,8 +15,9 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     body: new URLSearchParams({ client_id: required("GOOGLE_OAUTH_CLIENT_ID"), client_secret: required("GOOGLE_OAUTH_CLIENT_SECRET"), refresh_token: required("GOOGLE_OAUTH_REFRESH_TOKEN"), grant_type: "refresh_token" }),
   });
   if (!tokenResponse.ok) {
-    const oauthErrorBody = await tokenResponse.text();
-    throw new Error(`Google authentication failed with HTTP ${tokenResponse.status}: ${oauthErrorBody}`);
+    const oauthError = await tokenResponse.json().catch(() => ({})) as { error?: string };
+    if (oauthError.error === "unauthorized_client") throw new Error("Google OAuth client is not authorized for the configured refresh-token grant");
+    throw new Error(`Google authentication failed with HTTP ${tokenResponse.status}`);
   }
   const tokenPayload = await tokenResponse.json() as { access_token?: string };
   if (!tokenPayload.access_token) throw new Error("Google authentication returned no access token");
