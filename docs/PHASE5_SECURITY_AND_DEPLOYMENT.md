@@ -1,7 +1,10 @@
 # Phase 5 Security and Deployment
 
 Release: Frontend 1.0.0  
-Apps Script deployment: version 5
+Apps Script deployment: Sheet-bound version 24
+
+Production Script ID: `1H88OzmYKwSNSOx8X4K_seVPZkP8xB7EOMUciAdClS5qLEF1s04gyr7oi`  
+Production deployment ID: `AKfycbwVab89xreK0Eeo08ZSJ_uUgeMlYk2HYdFQlcJRHDvizvyMtDts78J14dgZ_8zh9_Di`
 
 ## Request path
 
