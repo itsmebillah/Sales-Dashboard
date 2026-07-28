@@ -19,6 +19,9 @@ No Google secret, script identifier, Apps Script URL, Sheet identifier, raw
 Master Dataset row, or source transaction is delivered to client JavaScript.
 Missing credentials fail closed.
 
+The refresh token must grant the exact scope documented in
+[`GOOGLE_OAUTH_SCOPE_REQUIREMENTS.md`](GOOGLE_OAUTH_SCOPE_REQUIREMENTS.md).
+
 ## Vercel configuration
 
 The `sales-dashboard` project is Git-connected to
