@@ -14,7 +14,10 @@ export async function fetchDashboardData(): Promise<DashboardData> {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ client_id: required("GOOGLE_OAUTH_CLIENT_ID"), client_secret: required("GOOGLE_OAUTH_CLIENT_SECRET"), refresh_token: required("GOOGLE_OAUTH_REFRESH_TOKEN"), grant_type: "refresh_token" }),
   });
-  if (!tokenResponse.ok) throw new Error(`Google authentication failed with HTTP ${tokenResponse.status}`);
+  if (!tokenResponse.ok) {
+    const oauthErrorBody = await tokenResponse.text();
+    throw new Error(`Google authentication failed with HTTP ${tokenResponse.status}: ${oauthErrorBody}`);
+  }
   const tokenPayload = await tokenResponse.json() as { access_token?: string };
   if (!tokenPayload.access_token) throw new Error("Google authentication returned no access token");
   const response = await fetch(`https://script.googleapis.com/v1/scripts/${encodeURIComponent(required("APPS_SCRIPT_ID"))}:run`, {
