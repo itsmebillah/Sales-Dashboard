@@ -4,12 +4,12 @@ Governed sales analytics from heterogeneous Google Sheets data to a secure execu
 
 ![Sales Intelligence Platform social preview](assets/social-preview/sales-intelligence-platform-social-preview.png)
 
-[![Version](https://img.shields.io/badge/version-2.0.0-0f766e?style=flat-square)](RELEASE_NOTES.md)
+[![Version](https://img.shields.io/badge/version-3.0.1-0f766e?style=flat-square)](RELEASE_NOTES.md)
 [![Status](https://img.shields.io/badge/status-active-15803d?style=flat-square)](IMPLEMENTATION_ROADMAP.md)
-[![Tests](https://img.shields.io/badge/backend_tests-14%20passing-15803d?style=flat-square)](tests/run-tests.js)
+[![Tests](https://img.shields.io/badge/tests-17%20passing-15803d?style=flat-square)](tests/run-tests.js)
 [![Platform](https://img.shields.io/badge/platform-Apps%20Script%20HTML%20Service-111827?style=flat-square)](#technology-stack)
 
-[Live Dashboard](https://sales-dashboard-beta-jade.vercel.app) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Release Notes](RELEASE_NOTES.md)
+[Live Dashboard](https://script.google.com/macros/s/AKfycbzVTrLrzzR_KVlPxodSrbZ6fi005igUX-YvM-kMVDdA4q8Nq6kzhoXkE0EEy4WQSmwXJA/exec) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Release Notes](RELEASE_NOTES.md)
 
 ## Overview
 
@@ -101,8 +101,10 @@ The standalone production Apps Script project is deployed as a public HTML Servi
 - Growth is unavailable for periods that are not comparable.
 - Product mix remains source-unit-only until governed unit conversion exists.
 - Receivable recovery, outstanding, aging, and DSO are not calculated without certified source facts.
-- A clean frontend install currently reports transitive dependency advisories that require controlled dependency review.
-- Local production builds require valid server-side Google credentials to exercise live data paths.
+- The retired Next.js compatibility client has no production dependency
+  vulnerabilities. Its development-only ESLint graph contains an upstream
+  advisory whose forced ESLint 10 upgrade is incompatible with Next.js 16's
+  current React lint plugins.
 
 ## Roadmap
 
@@ -120,4 +122,4 @@ No open-source license is currently declared. The source is publicly visible, bu
 
 **Md. Masum Billah** | Data Analyst, Automation Developer, and Business Intelligence Specialist
 
-[Portfolio](https://itsmebillah.github.io/) | [GitHub](https://github.com/itsmebillah) | [Email](mailto:itsmbillah@gmail.com) | [Live Demo](https://sales-dashboard-beta-jade.vercel.app) | [Documentation](CORE_PLATFORM_ARCHITECTURE.md) | [Related: Company Hub](https://github.com/itsmebillah/company-hub)
+[Portfolio](https://itsmebillah.github.io/) | [GitHub](https://github.com/itsmebillah) | [Email](mailto:itsmbillah@gmail.com) | [Live Demo](https://script.google.com/macros/s/AKfycbzVTrLrzzR_KVlPxodSrbZ6fi005igUX-YvM-kMVDdA4q8Nq6kzhoXkE0EEy4WQSmwXJA/exec) | [Documentation](CORE_PLATFORM_ARCHITECTURE.md) | [Related: Company Hub](https://github.com/itsmebillah/company-hub)

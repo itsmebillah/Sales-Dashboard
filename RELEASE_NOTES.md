@@ -1,5 +1,18 @@
 # Release Notes
 
+## 3.0.1 — Production Readiness Corrections
+
+- Migrated production from the broken sheet-bound publication container to a
+  clean standalone Apps Script Web App host while preserving the private Sheet
+  and all business calculations.
+- Added certified employee, dealer, and product display-name dictionaries to the
+  KPI consumer contract so visible UI never exposes canonical/hash IDs.
+- Increased certified Master/KPI cache retention from 30 minutes to six hours.
+- Added an explicit owner authorization and private-Sheet connectivity check.
+- Updated canonical project, deployment, documentation, live links, and release
+  metadata.
+- Expanded the automated suite to 17 passing test groups.
+
 ## 3.0.0 — Phase 7 Production Executive BI Dashboard
 
 - Rebuilt the Apps Script HTML Service frontend as a polished executive BI
@@ -22,11 +35,10 @@
 - Added frontend syntax and architecture regression tests, bringing the suite to
   16 passing test groups.
 
-Contract limitation: the current certified KPI snapshot does not contain a
-business-name dictionary, date series, region, zone, or category dimensions.
-The frontend never exposes raw or hashed entity IDs; it uses certified labels
-when available and stable executive aliases otherwise. These dimensions require
-an additive certified contract enhancement in the data-accuracy phase.
+Contract limitation: the certified KPI snapshot does not yet contain date
+series, region, zone, or category dimensions. Certified business-name labels are
+now included; the remaining dimensions require additive source and contract
+enhancements in the data-accuracy phase.
 
 ## 1.1.0 — Phase 4 KPI Engine
 
