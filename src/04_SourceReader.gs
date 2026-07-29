@@ -2,6 +2,7 @@ SIP.SourceReader = (function () {
   function readAll(spreadsheet, config, diagnostics) {
     var definitions = [
       { id: 'SRC_SALES_MONTHLY', moduleId: 'SALES', name: config.sheets.sales },
+      { id: 'SRC_SALES_PREVIOUS', moduleId: 'SALES_HISTORY', name: config.sheets.previousSales, required: false },
       { id: 'SRC_DEALER_LIFTING', moduleId: 'LIFTING', name: config.sheets.lifting },
       { id: 'SRC_MONTHLY_PROJECTION', moduleId: 'COLLECTION_PROJECTION', name: config.sheets.transactions }
     ];
@@ -10,7 +11,7 @@ SIP.SourceReader = (function () {
       var started = Date.now();
       var sheet = spreadsheet.getSheetByName(def.name);
       if (!sheet) {
-        diagnostics.issue('ERROR', 'SOURCE_SHEET_MISSING', 'Required source sheet not found: ' + def.name, def);
+        diagnostics.issue(def.required === false ? 'WARN' : 'ERROR', 'SOURCE_SHEET_MISSING', (def.required === false ? 'Optional' : 'Required') + ' source sheet not found: ' + def.name, def);
         output[def.id] = { definition: def, values: [] };
         return;
       }

@@ -3,6 +3,7 @@ SIP.Config = (function () {
     spreadsheetId: '1HxVEJqWqIc_xSGIBYJpJBIuHeqTaQiUUJ_Lc7jLKlSY',
     sheets: {
       sales: 'Sales Data Base Monthly',
+      previousSales: 'Previous Month Sales',
       lifting: 'Dealer lifting',
       transactions: 'Monthly Projection',
       importBatches: 'Import Batches',

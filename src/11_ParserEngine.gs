@@ -3,6 +3,7 @@ SIP.ParserEngine = (function () {
     var results = [];
     var jobs = [
       ['SRC_SALES_MONTHLY', SIP.SalesParser],
+      ['SRC_SALES_PREVIOUS', SIP.HistoricalSalesParser],
       ['SRC_DEALER_LIFTING', SIP.LiftingParser],
       ['SRC_MONTHLY_PROJECTION', SIP.TransactionParser]
     ];

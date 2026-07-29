@@ -239,6 +239,18 @@ test('refreshes KPIs from the supplied certified Master Dataset without reparsin
   } finally { SIP.DataEngine.get=original; cache.clear(); }
 });
 
+test('ingests the previous-month report as history only without duplicating sales', () => {
+  const rows=salesFixture().map(row=>row.slice());
+  rows[0][0]="June'26";
+  rows[3][16]='Sales >May,26';
+  const diagnostics=new SIP.Diagnostics(),config=SIP.Config.get();
+  const context={config,diagnostics,batchId:'HISTORY',ingestedAt:'2026-07-29T00:00:00Z'};
+  const parsed=SIP.HistoricalSalesParser.parse({definition:{id:'SRC_SALES_PREVIOUS',name:'Previous Month Sales'},values:rows},context);
+  ok(parsed.records.length>0);
+  ok(parsed.records.every(record=>record.metric_id==='HISTORICAL_SALES_AMOUNT'));
+  ok(parsed.records.every(record=>record.period_start==='2026-05-01'));
+});
+
 test('emits only statuses accepted by the Import Batches sheet contract', () => {
   const successful = new SIP.Diagnostics().finish();
   equal(successful.status, 'COMPLETED');
@@ -283,6 +295,8 @@ test('enforces exact-number dashboard formatting and cache-only hydration', () =
   ok(source.includes("useGrouping:true"),'exact grouped-number formatter is required');
   ok(source.includes('.getCachedDashboardApi()'),'initial hydration must use certified KPI cache');
   ok(!/BI\.boot[\s\S]{0,500}runDataEngine/.test(source),'dashboard boot must never start the Data Engine');
+  ok(source.includes('id="mobileReport"'),'responsive report-card container is required');
+  ok(source.includes('renderMobile(rows)'),'mobile report rows must render from live KPI data');
 });
 
 process.on('exit', () => {
