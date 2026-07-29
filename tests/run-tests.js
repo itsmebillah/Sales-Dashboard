@@ -239,6 +239,19 @@ test('refreshes KPIs from the supplied certified Master Dataset without reparsin
   } finally { SIP.DataEngine.get=original; cache.clear(); }
 });
 
+test('publishes certified business display names without exposing raw entity IDs', () => {
+  const master={schemaVersion:'1.0.0',batchId:'LABELS',records:[],qualityFlags:[],dimensions:{
+    employees:{'EMPLOYEE:1':{id:'EMPLOYEE:1',name:'Ayesha Rahman',role:'RSM'},'EMPLOYEE:2':{id:'EMPLOYEE:2',name:'Tanvir Ahmed',role:'TSO'}},
+    dealers:{'DEALER:137':{id:'DEALER:137',name:'City Enterprise'}},
+    products:{'PRODUCT:HASH':{id:'PRODUCT:HASH',name:'Premium Cement',pack:'50 KG',group:'Cement'}}
+  }};
+  const snapshot=SIP.KpiEngine.calculate(master);
+  equal(snapshot.labels.RSM['EMPLOYEE:1'],'Ayesha Rahman');
+  equal(snapshot.labels.TSO['EMPLOYEE:2'],'Tanvir Ahmed');
+  equal(snapshot.labels.DEALER['DEALER:137'],'City Enterprise');
+  equal(snapshot.labels.PRODUCT['PRODUCT:HASH'],'Premium Cement · 50 KG · Cement');
+});
+
 test('compiles every modular HTML Service browser script', () => {
   const htmlDir=path.join(root,'src','html');
   const scripts=fs.readdirSync(htmlDir).filter(file=>file.endsWith('.html')).map(file=>({file,source:fs.readFileSync(path.join(htmlDir,file),'utf8')}));

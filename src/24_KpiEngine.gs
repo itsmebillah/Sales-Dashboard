@@ -13,6 +13,7 @@ SIP.KpiEngine = (function () {
       schemaVersion:'1.0.0', kpiVersion:'1.0.0', masterSchemaVersion:master.schemaVersion,
       batchId:master.batchId, generatedAt:generatedAt,
       executive:company,
+      labels:buildDisplayLabels(master.dimensions||{}),
       hierarchy:{ COMPANY:byType.COMPANY||[], RSM:byType.RSM||[], TSO:byType.TSO||[], SR:byType.SR||[], DEALER:byType.DEALER||[], PRODUCT:byType.PRODUCT||[] },
       sales:buildSalesModule(contracts),
       dealers:buildDealerModule(byType.DEALER||[],risks),
@@ -74,6 +75,13 @@ SIP.KpiEngine = (function () {
   function buildProjectionModule(c,dealers){return {total:c.projection,dealerCount:dealers.filter(function(x){return x.projection>0;}).length,exceptions:dealers.filter(function(x){return x.sales>0&&x.projection===0;}).map(function(x){return x.entityId;})};}
   function buildLiftingModule(c,dealers){return {total:c.lifting,stock:c.stock,secondary:c.secondary,salesFlowRatioPct:ratio(c.lifting,c.sales),exceptions:dealers.filter(function(x){return x.sales>0&&x.lifting===0;}).map(function(x){return x.entityId;})};}
   function toInsight(r){return {type:r.type,severity:r.severity,entity:r.entityType,entityId:r.entityId,metric:r.metric,value:r.value,threshold:r.threshold,riskId:r.riskId};}
+  function buildDisplayLabels(dimensions){
+    var labels={COMPANY:{'COMPANY:DEFAULT':'Company total'},RSM:{},TSO:{},SR:{},DEALER:{},PRODUCT:{}};
+    Object.keys(dimensions.employees||{}).forEach(function(id){var x=dimensions.employees[id]||{},name=x.name||x.normalizedName;if(!name)return;var role=String(x.role||'').toUpperCase();if(role==='RSM')labels.RSM[id]=name;else if(role==='TSO')labels.TSO[id]=name;else labels.SR[id]=name;});
+    Object.keys(dimensions.dealers||{}).forEach(function(id){var x=dimensions.dealers[id]||{};if(x.name||x.normalizedName)labels.DEALER[id]=x.name||x.normalizedName;});
+    Object.keys(dimensions.products||{}).forEach(function(id){var x=dimensions.products[id]||{},parts=[x.name,x.pack,x.group].filter(Boolean);if(parts.length)labels.PRODUCT[id]=parts.join(' · ');});
+    return labels;
+  }
   function ratio(a,b){return a===null||a===undefined||b===null||b===undefined||b===0?null:a/b;}
   function emptyCompany(){return finalize({entityType:'COMPANY',entityId:'COMPANY:DEFAULT',sums:{},maxima:{},latest:{},periods:{},daily:{},sets:{dealers:{},srs:{},tsos:{},rsms:{},products:{}},recordCount:0});}
   return { calculate:calculate };

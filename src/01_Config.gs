@@ -10,7 +10,7 @@ SIP.Config = (function () {
     },
     cache: {
       namespace: 'SIP_MASTER_V1',
-      ttlSeconds: 1800,
+      ttlSeconds: 21600,
       chunkChars: 80000,
       maxChunks: 60
     },

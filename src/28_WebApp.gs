@@ -26,3 +26,9 @@ function refreshDashboardData() {
 }
 
 function runDataEngine(){return SIP.DataEngine.run({writeDiagnostics:true});}
+
+/** One-time owner authorization and private Sheet connectivity check. */
+function authorizeProduction() {
+  var config=SIP.Config.get(),spreadsheet=SpreadsheetApp.openById(config.spreadsheetId);
+  return{authorized:true,spreadsheetName:spreadsheet.getName(),checkedAt:SIP.Utils.nowIso()};
+}
