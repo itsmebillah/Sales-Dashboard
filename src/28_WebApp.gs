@@ -17,8 +17,8 @@ function refreshDashboardData() {
   try {
     var masterResult=runDataEngine();
     var kpiResult=refreshKpiSnapshot(masterResult.master);
-    var response=dashboardPayload(kpiResult.snapshot);
-    response.refresh={ok:true,durationMs:Date.now()-started,masterCache:masterResult.cache,kpiCache:kpiResult.cache};
+    var dashboardResult=publishDashboardApi(kpiResult.snapshot),response={ok:true,data:dashboardResult.data};
+    response.refresh={ok:true,durationMs:Date.now()-started,masterCache:masterResult.cache,kpiCache:kpiResult.cache,dashboardCache:dashboardResult.cache};
     return response;
   } catch(error) {
     return{ok:false,error:{code:error&&error.message==='Another data-engine build is already running'?'REFRESH_IN_PROGRESS':'REFRESH_FAILED',message:error&&error.message?error.message:'Refresh failed'},durationMs:Date.now()-started};

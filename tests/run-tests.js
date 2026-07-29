@@ -239,6 +239,17 @@ test('refreshes KPIs from the supplied certified Master Dataset without reparsin
   } finally { SIP.DataEngine.get=original; cache.clear(); }
 });
 
+test('publishes a compact certified dashboard cache for fresh-page hydration', () => {
+  cache.clear();
+  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'DASHBOARD_CACHE',records:[],qualityFlags:[],dimensions:{}});
+  const published=sandbox.publishDashboardApi(snapshot);
+  ok(published.cache.cached);
+  const loaded=sandbox.getDashboardApi('dashboard');
+  ok(loaded.ok);
+  equal(loaded.data.batchId,'DASHBOARD_CACHE');
+  cache.clear();
+});
+
 test('ingests the previous-month report as history only without duplicating sales', () => {
   const rows=salesFixture().map(row=>row.slice());
   rows[0][0]="June'26";

@@ -34,6 +34,24 @@ async function main() {
   }
 
   const read = selector => appFrame.locator(selector).first().textContent().catch(() => null);
+  let interaction = null;
+  if (process.env.RUN_INTERACTIONS === 'true') {
+    const rsm = appFrame.locator('#filterRSM');
+    const values = await rsm.locator('option').evaluateAll(options => options.map(option => option.value).filter(Boolean));
+    if (values.length) {
+      await rsm.selectOption(values[0]);
+      await page.waitForTimeout(500);
+    }
+    const tooltipShown = await appFrame.evaluate(() => {
+      const hit = BI.state.chartHits.flow && BI.state.chartHits.flow[0];
+      const canvas = document.getElementById('flowChart');
+      if (!hit || !canvas) return false;
+      canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: hit.x + Math.max(1, hit.w / 2), clientY: hit.y + Math.max(1, hit.h / 2), bubbles: true }));
+      return getComputedStyle(document.getElementById('flowTooltip')).display !== 'none';
+    });
+    interaction = { selectedRsm: values[0] || null, scopeName: await read('#scopeName'), tooltipShown };
+  }
+
   const result = {
     url: page.url(),
     title: await page.title(),
@@ -48,6 +66,7 @@ async function main() {
     refreshDisabled: await appFrame.locator('#refreshButton').isDisabled(),
     bodyScrollWidth: await appFrame.locator('body').evaluate(element => element.scrollWidth),
     viewportWidth: await appFrame.evaluate(() => innerWidth),
+    interaction,
     consoleErrors,
     pageErrors
   };

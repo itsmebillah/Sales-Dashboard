@@ -7,9 +7,8 @@ function getDashboardApi(view) {
   try {
     view = view ? String(view) : 'dashboard';
     if (view !== 'dashboard' && view !== 'health') return { ok:false, error:{ code:'UNSUPPORTED_VIEW', message:'Supported views: dashboard, health' } };
-    var result = SIP.KpiService.getCached({});
-    if (!result.snapshot) return { ok:false, error:{ code:'KPI_CACHE_EMPTY', message:'Certified KPI cache is empty. Run refresh to publish the dashboard.' }, responseMs:Date.now()-started };
-    var snapshot = result.snapshot;
+    var snapshot = SIP.CacheEngine.get(dashboardCacheConfig(), new SIP.Diagnostics());
+    if (!snapshot) return { ok:false, error:{ code:'KPI_CACHE_EMPTY', message:'Certified KPI cache is empty. Run refresh to publish the dashboard.' }, responseMs:Date.now()-started };
     if (view === 'health') {
       return { ok:true, data:{
         service:'sales-intelligence-platform', release:SIP.VERSION, kpiVersion:snapshot.kpiVersion,
@@ -17,10 +16,24 @@ function getDashboardApi(view) {
         quality:snapshot.quality, calculationMs:snapshot.performance.calculationMs, responseMs:Date.now()-started
       }};
     }
-    return dashboardPayload(snapshot);
+    return { ok:true, data:snapshot };
   } catch (error) {
     return { ok:false, error:{ code:'BACKEND_ERROR', message:error && error.message ? error.message : 'Unknown backend error' }, responseMs:Date.now()-started };
   }
+}
+
+function dashboardCacheConfig() {
+  return SIP.Config.get({cache:{namespace:'SIP_DASHBOARD_V1',ttlSeconds:21600,chunkChars:80000,maxChunks:20}});
+}
+
+/** Publish and verify the compact certified consumer projection. */
+function publishDashboardApi(snapshot) {
+  var data=dashboardPayload(snapshot).data,diagnostics=new SIP.Diagnostics(),config=dashboardCacheConfig();
+  var result=SIP.CacheEngine.put(data,config,diagnostics);
+  if(!result.cached)throw new Error('Certified dashboard cache exceeded its governed capacity');
+  var verified=SIP.CacheEngine.get(config,diagnostics);
+  if(!verified||verified.batchId!==data.batchId)throw new Error('Certified dashboard cache publication verification failed');
+  return{data:data,cache:result};
 }
 
 /** Compact, certified consumer projection. KPI calculations remain unchanged. */
