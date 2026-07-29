@@ -267,6 +267,12 @@ test('publishes a compact certified dashboard cache for fresh-page hydration', (
   cache.clear();properties.clear();
 });
 
+test('bounds dashboard intelligence payload while preserving total counts', () => {
+  const risks=Array.from({length:75},(_,index)=>({riskId:'R'+index})),insights=Array.from({length:75},(_,index)=>({riskId:'I'+index}));
+  const payload=sandbox.dashboardPayload({schemaVersion:'1.0.0',kpiVersion:'1.0.0',masterSchemaVersion:'1.0.0',batchId:'BOUNDED',generatedAt:'2026-07-29',executive:{},labels:{},hierarchy:{},dealers:{top:[]},products:{topProducts:[],unitPolicy:'SOURCE_UNIT_ONLY'},collection:{},projection:{},lifting:{},risks,insights,quality:{},performance:{}}).data;
+  equal(payload.risks.length,30);equal(payload.insights.length,30);equal(payload.riskTotal,75);equal(payload.insightTotal,75);
+});
+
 test('recovers certified dashboard data from durable cache after L1 eviction', () => {
   cache.clear();properties.clear();
   const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'DURABLE_CACHE',records:[],qualityFlags:[],dimensions:{}});
