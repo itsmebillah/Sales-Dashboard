@@ -9,9 +9,12 @@ SIP.DurableCache = (function () {
     var json=JSON.stringify(value),payload=encode(json),chunks=[];
     for(var i=0;i<payload.length;i+=CHUNK_CHARS)chunks.push(payload.slice(i,i+CHUNK_CHARS));
     if(chunks.length>MAX_CHUNKS)return{cached:false,reason:'DURABLE_CAPACITY',chunks:chunks.length,maxChunks:MAX_CHUNKS};
-    var properties=store(),previous=parse(properties.getProperty(META)),generation=SIP.Utils.hash([value.batchId,value.generatedAt,json.length]).slice(0,16),entries={};
-    chunks.forEach(function(chunk,index){entries[chunkKey(generation,index)]=chunk;});
-    properties.setProperties(entries,false);
+    var properties=store(),previous=parse(properties.getProperty(META)),generation=SIP.Utils.hash([value.batchId,value.generatedAt,json.length]).slice(0,16),entries={},batchChars=0;
+    chunks.forEach(function(chunk,index){
+      if(batchChars&&batchChars+chunk.length>80000){properties.setProperties(entries,false);entries={};batchChars=0;}
+      entries[chunkKey(generation,index)]=chunk;batchChars+=chunk.length;
+    });
+    if(batchChars)properties.setProperties(entries,false);
     properties.setProperty(META,JSON.stringify({generation:generation,chunks:chunks.length,hash:SIP.Utils.hash(json),generatedAt:value.generatedAt,batchId:value.batchId}));
     var verified=get();
     if(!verified||verified.batchId!==value.batchId){removeGeneration(properties,generation,chunks.length);return{cached:false,reason:'DURABLE_VERIFICATION_FAILED',chunks:chunks.length};}

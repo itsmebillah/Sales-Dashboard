@@ -284,6 +284,12 @@ test('recovers certified dashboard data from durable cache after L1 eviction', (
   properties.clear();cache.clear();
 });
 
+test('writes durable properties in bounded transport batches', () => {
+  const source=fs.readFileSync(path.join(root,'src','15a_DurableCache.gs'),'utf8');
+  ok(source.includes('batchChars+chunk.length>80000'));
+  ok(source.indexOf('properties.setProperties(entries,false)')<source.indexOf('properties.setProperty(META'),'durable metadata must publish after chunk batches');
+});
+
 test('ingests the previous-month report as history only without duplicating sales', () => {
   const rows=salesFixture().map(row=>row.slice());
   rows[0][0]="June'26";
