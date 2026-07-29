@@ -2,9 +2,9 @@
 
 ## 3.0.1 — Production Readiness Corrections
 
-- Migrated production from the broken sheet-bound publication container to a
-  clean standalone Apps Script Web App host while preserving the private Sheet
-  and all business calculations.
+- Restored and retained the original sheet-bound Apps Script project as the
+  single production host after using a standalone project only for publication
+  diagnostics.
 - Added certified employee, dealer, and product display-name dictionaries to the
   KPI consumer contract so visible UI never exposes canonical/hash IDs.
 - Increased certified Master/KPI cache retention from 30 minutes to six hours.

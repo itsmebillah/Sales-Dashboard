@@ -1,9 +1,10 @@
-# ADR-009: Standalone Production Web App Host
+# ADR-009: Standalone Production Web App Host (Rejected)
 
 ## Status
 
-Accepted on 2026-07-29. This supersedes ADR-007 only for the production runtime
-host. The logical data platform and private spreadsheet remain unchanged.
+Rejected on 2026-07-29. The diagnostic host proved that the deployer account can
+publish Web Apps, but production remains in the original sheet-bound project by
+owner decision. No production migration is authorized.
 
 ## Context
 
@@ -18,21 +19,18 @@ same Web App access and execution settings, returned HTTP 200. This isolated the
 failure to the old container-bound project rather than the account, manifest,
 URL construction, or HTML Service.
 
-## Decision
+## Rejected proposal
 
-Production is hosted in the clean standalone Apps Script project:
+The temporary diagnostic proposal was to host production in:
 
 `1hCN6POj_JDUDjXylMXnqayQMzNltFd6vOwW-yIs64aG2vqF1fK-KHoH7`
 
-The repository remains the source of truth and `.clasp.json` targets this
-project. The Data Engine already uses `SpreadsheetApp.openById()` with the
-governed spreadsheet ID, so moving the runtime host does not change parsers,
-Master Dataset structure, KPI formulas, forecast logic, risk rules, or cache
-contracts.
+The repository does not target this project. `.clasp.json` remains bound to the
+original production Script ID. The temporary project is not a production data
+host and must not receive future releases.
 
-The obsolete Execution API manifest entry is removed because production
-dashboard rendering uses HTML Service exclusively. The manifest declares only
-the Sheets scope required by the existing Data Engine.
+The Execution API is not part of dashboard rendering. The production manifest
+declares only the Web App and the Sheets scope required by the Data Engine.
 
 ## Security and operational consequences
 
@@ -41,5 +39,4 @@ the Sheets scope required by the existing Data Engine.
 - The Web App executes as its deploying owner and holds no browser credentials.
 - Initial page loading still reads only certified KPI cache.
 - Refresh is the only browser action that opens the configured Sheet.
-- The former sheet-bound project and deployments remain intact for audit and
-  rollback but are no longer production.
+- The original sheet-bound project remains the single production project.

@@ -8,7 +8,7 @@ runtime. ADR-006 remains a supported legacy consumer contract.
 ## Decision
 
 The production application is an Apps Script HTML Service Web App in the
-standalone production project selected by ADR-009. Its browser contract uses `google.script.run`;
+original sheet-bound production project. Its browser contract uses `google.script.run`;
 it does not use the Apps Script Execution API or Vercel for dashboard rendering.
 
 Initial loading calls `getCachedDashboardApi()`. That function reads only the
