@@ -106,11 +106,11 @@ async function main() {
         results.push({
           level, optionCount: Math.max(0, select.options.length - 1), selected: !!id,
           entityMatch: !!expected && BI.state.scope === expected,
-          salesMatch: !!expected && document.querySelector('.kpi-card .kpi-value').textContent === BI.number(expected.sales)
+          salesMatch: !!expected && document.querySelector('.kpi-card .kpi-value').textContent === BI.number(level === 'PRODUCT' ? expected.productVolume : expected.sales)
         });
         BI.Filters.clear();
       }
-      const disabled = ['Date', 'Region', 'Category'].reduce((out, name) => {
+      const disabled = ['DATE', 'REGION', 'CATEGORY'].reduce((out, name) => {
         out[name] = document.getElementById('filter' + name).disabled; return out;
       }, {});
       return { levels: results, disabled, cascadingHierarchy: false };
