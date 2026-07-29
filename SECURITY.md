@@ -2,13 +2,13 @@
 
 ## Sensitive Data
 
-Do not commit Google OAuth credentials, Apps Script access tokens, populated environment files, production spreadsheet exports, or personally identifiable business data. Use [`frontend/.env.example`](frontend/.env.example) for configuration keys and synthetic data for tests and screenshots.
+Do not commit Google OAuth credentials, Apps Script access tokens, populated environment files, production spreadsheet exports, or personally identifiable business data. Use Script Properties for production configuration and synthetic data for tests and screenshots.
 
 ## Architecture Boundary
 
-The browser communicates only with the same-origin Next.js API route. Google OAuth credentials and the Apps Script deployment identifier remain server-side. Changes that expose these values to client bundles are security regressions.
+The browser communicates with server functions only through the same-origin Apps Script HTML Service bridge (`google.script.run`). The private spreadsheet, Master Dataset, and credentials are never returned to browser code. Initial dashboard hydration may read only the certified KPI cache; changes that expose raw records or trigger parsing during page load are security regressions.
 
-The complete deployment and credential model is documented in [docs/PHASE5_SECURITY_AND_DEPLOYMENT.md](docs/PHASE5_SECURITY_AND_DEPLOYMENT.md) and [docs/GOOGLE_OAUTH_SCOPE_REQUIREMENTS.md](docs/GOOGLE_OAUTH_SCOPE_REQUIREMENTS.md).
+The production runtime and its security boundary are documented in [ADR-008](docs/ADR-008-CACHE-ONLY-HTML-SERVICE-RUNTIME.md).
 
 ## Reporting a Vulnerability
 

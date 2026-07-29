@@ -11,18 +11,10 @@ Thank you for improving the Sales Intelligence Platform. Changes must preserve t
 
 ## Development Checks
 
-Run the backend suite:
+Run the production suite:
 
 ```powershell
 npm test
-```
-
-Run the frontend checks:
-
-```powershell
-Set-Location frontend
-npm ci
-npm run check
 ```
 
 ## Change Requirements

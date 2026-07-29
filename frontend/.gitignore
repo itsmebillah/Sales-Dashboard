@@ -1,7 +1,0 @@
-node_modules/
-.next/
-.vercel/
-*.log
-.vercel
-.env*
-!.env.example

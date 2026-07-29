@@ -2,8 +2,9 @@
 
 ## Status
 
-Accepted on 2026-07-29. This supersedes ADR-006 as the primary dashboard
-runtime. ADR-006 remains a supported legacy consumer contract.
+Accepted on 2026-07-29. This is the only supported production dashboard
+runtime. The retired private-server consumer architecture is not deployed or
+maintained.
 
 ## Decision
 
@@ -57,8 +58,8 @@ the UI shows its real elapsed time and never displays fabricated progress.
 
 ## Consequences
 
-- OAuth refresh tokens, Vercel server functions, and `scripts.run` are no longer
-  dependencies of the production dashboard path.
+- No external frontend runtime or Execution API credential is a dependency of
+  the production dashboard path.
 - The repository and clasp deployment remain the source of truth.
 - New modules extend the Master Dataset and KPI cache contracts; they do not
   require a dashboard runtime redesign.

@@ -73,8 +73,7 @@ Read [CORE_PLATFORM_ARCHITECTURE.md](CORE_PLATFORM_ARCHITECTURE.md) and the arch
 ```text
 src/                  Apps Script ingestion, quality, cache, KPI, risk, and API modules
 tests/                Backend regression and performance tests
-frontend/             Legacy Next.js consumer retained for compatibility
-docs/                 Architecture decisions, operations, security, and phase verification
+docs/                 Architecture decisions, operations, and phase verification
 appsscript.json        Apps Script runtime and OAuth scope manifest
 *.md                   Business dictionaries, specifications, audits, and roadmap
 ```
@@ -101,10 +100,6 @@ The production Apps Script project is bound to the private source spreadsheet an
 - Growth is unavailable for periods that are not comparable.
 - Product mix remains source-unit-only until governed unit conversion exists.
 - Receivable recovery, outstanding, aging, and DSO are not calculated without certified source facts.
-- The retired Next.js compatibility client has no production dependency
-  vulnerabilities. Its development-only ESLint graph contains an upstream
-  advisory whose forced ESLint 10 upgrade is incompatible with Next.js 16's
-  current React lint plugins.
 
 ## Roadmap
 
@@ -112,7 +107,7 @@ Planned work and sequencing are maintained in [IMPLEMENTATION_ROADMAP.md](IMPLEM
 
 ## Contributing
 
-Contributions must preserve the canonical dataset and KPI ownership rules. Start with the architecture records, run both backend and frontend checks, and document any business-definition change explicitly.
+Contributions must preserve the canonical dataset and KPI ownership rules. Start with the architecture records, run the production test suite, and document any business-definition change explicitly.
 
 ## License
 
