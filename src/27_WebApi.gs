@@ -52,6 +52,7 @@ function dashboardPayload(snapshot) {
     collection:{total:snapshot.collection.total,ratio:snapshot.collection.ratio,trendPct:snapshot.collection.trendPct,coveragePct:snapshot.collection.coveragePct},
     projection:{total:snapshot.projection.total,dealerCount:snapshot.projection.dealerCount},
     lifting:{total:snapshot.lifting.total,stock:snapshot.lifting.stock,secondary:snapshot.lifting.secondary,salesFlowRatioPct:snapshot.lifting.salesFlowRatioPct},
+    attendance:snapshot.attendance,
     risks:(snapshot.risks||[]).slice(0,30), insights:(snapshot.insights||[]).slice(0,30),
     riskTotal:(snapshot.risks||[]).length, insightTotal:(snapshot.insights||[]).length,
     quality:snapshot.quality, performance:snapshot.performance

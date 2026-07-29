@@ -12,7 +12,8 @@ SIP.KpiDefinitions = (function () {
     WORKING_DAYS_ELAPSED: { owner: 'Sales Planning', aggregation: 'MAX', unit: 'DAY' },
     DUE_WORKING_DAYS: { owner: 'Sales Planning', aggregation: 'MAX', unit: 'DAY' },
     TOTAL_WORKING_DAYS: { owner: 'Sales Planning', aggregation: 'MAX', unit: 'DAY' },
-    HISTORICAL_SALES_AMOUNT: { owner: 'Sales Owner', aggregation: 'SUM_BY_PERIOD', unit: 'CURRENCY' }
+    HISTORICAL_SALES_AMOUNT: { owner: 'Sales Owner', aggregation: 'SUM_BY_PERIOD', unit: 'CURRENCY' },
+    SALES_ACTIVITY_ATTENDANCE_STATUS: { owner: 'Sales Operations', aggregation: 'NON_ADDITIVE', unit: 'STATUS' }
   };
   function get(id) { return definitions[id] || { owner: 'Data Governance', aggregation: 'SUM', unit: '' }; }
   return { get: get, all: definitions };

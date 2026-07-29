@@ -21,6 +21,7 @@ SIP.KpiEngine = (function () {
       collection:buildCollectionModule(company,byType.DEALER||[]),
       projection:buildProjectionModule(company,byType.DEALER||[]),
       lifting:buildLiftingModule(company,byType.DEALER||[]),
+      attendance:buildAttendanceModule(master.attendance),
       forecastBase:{ executive:company.forecastBase, entities:Object.keys(contracts).reduce(function(o,k){o[k]=contracts[k].forecastBase;return o;},{}) },
       risks:risks,
       insights:risks.map(toInsight),
@@ -74,6 +75,7 @@ SIP.KpiEngine = (function () {
   function buildCollectionModule(c,dealers){return {total:c.collection,ratio:c.collectionFlowRatioPct,trendPct:c.collectionTrendPct,coveragePct:ratio(dealers.filter(function(x){return x.collection>0;}).length,dealers.filter(function(x){return x.sales>0;}).length),exceptions:dealers.filter(function(x){return x.sales>0&&x.collection===0;}).map(function(x){return x.entityId;})};}
   function buildProjectionModule(c,dealers){return {total:c.projection,dealerCount:dealers.filter(function(x){return x.projection>0;}).length,exceptions:dealers.filter(function(x){return x.sales>0&&x.projection===0;}).map(function(x){return x.entityId;})};}
   function buildLiftingModule(c,dealers){return {total:c.lifting,stock:c.stock,secondary:c.secondary,salesFlowRatioPct:ratio(c.lifting,c.sales),exceptions:dealers.filter(function(x){return x.sales>0&&x.lifting===0;}).map(function(x){return x.entityId;})};}
+  function buildAttendanceModule(attendance){attendance=attendance||{};return {type:attendance.type||'SALES_ACTIVITY_NOT_HR',statusSource:attendance.statusSource||'SALES_ACTIVITY_DERIVED',providerContract:attendance.providerContract||'ATTENDANCE_PROVIDER_V1',hrAttendance:false,employeeCount:attendance.employeeCount||0,workingDays:attendance.workingDays||0,present:attendance.present||0,absent:attendance.absent||0};}
   function toInsight(r){return {type:r.type,severity:r.severity,entity:r.entityType,entityId:r.entityId,metric:r.metric,value:r.value,threshold:r.threshold,riskId:r.riskId};}
   function buildDisplayLabels(dimensions){
     var labels={COMPANY:{'COMPANY:DEFAULT':'Company total'},RSM:{},TSO:{},SR:{},DEALER:{},PRODUCT:{}};

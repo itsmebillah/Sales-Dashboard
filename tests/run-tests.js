@@ -367,6 +367,50 @@ test('uses one official CLOSED_DAY_ONLY calendar without impossible working-day 
   ok(calendar.current.elapsed+calendar.current.remaining===calendar.current.total);
 });
 
+test('generates the governed 2025-2032 calendar with Friday-only closure and fiscal periods', () => {
+  const config=SIP.Config.get(),context={config,diagnostics:new SIP.Diagnostics(),ingestedAt:'2026-07-29T16:00:00Z'};
+  const parsed=[{sourceId:'SRC_SALES_MONTHLY',records:[],metadata:{period:{periodStart:'2026-07-01',periodEnd:'2026-07-31'}}}];
+  const calendar=SIP.BusinessCalendar.build(parsed,context,config.calendar);
+  equal(calendar.rows.length,2922);
+  ok(calendar.rows.filter(x=>x.dayName==='Friday').every(x=>!x.isWorkingDay));
+  ok(calendar.rows.filter(x=>x.dayName==='Saturday').every(x=>x.isWorkingDay));
+  ok(calendar.rows.some(x=>x.date==='2028-02-29'));
+  equal(calendar.rows.find(x=>x.date==='2026-06-30').fiscalYear,'FY2026');
+  equal(calendar.rows.find(x=>x.date==='2026-07-01').fiscalYear,'FY2027');
+  equal(calendar.rows.find(x=>x.date==='2026-07-04').sellingDayIndex,3);
+});
+
+test('uses only approved Holiday rows in the official business calendar', () => {
+  const config=SIP.Config.get(),context={config,diagnostics:new SIP.Diagnostics(),ingestedAt:'2026-07-29T16:00:00Z'};
+  const values=[['holiday_date','holiday_name','approval_status'],['2026-07-04','Approved Closure','APPROVED'],['2026-07-05','Draft Closure','DRAFT']];
+  const spreadsheet={getSheetByName:name=>name==='Holiday'?{getDataRange:()=>({getValues:()=>values})}:null};
+  const settings=SIP.BusinessCalendar.loadSettings(spreadsheet,config);
+  const parsed=[{sourceId:'SRC_SALES_MONTHLY',records:[],metadata:{period:{periodStart:'2026-07-01',periodEnd:'2026-07-31'}}}];
+  const calendar=SIP.BusinessCalendar.build(parsed,context,settings);
+  equal(calendar.rows.find(x=>x.date==='2026-07-04').status,'GOVERNMENT_HOLIDAY');
+  equal(calendar.rows.find(x=>x.date==='2026-07-05').status,'WORKING_DAY');
+});
+
+test('derives Sales Activity Attendance only for elapsed working days and remains HR-replaceable', () => {
+  const config=SIP.Config.get(),context={config,diagnostics:new SIP.Diagnostics(),batchId:'ATT',ingestedAt:'2026-07-06T00:00:00Z'};
+  const parsed=[{sourceId:'SRC_SALES_MONTHLY',records:[],metadata:{period:{periodStart:'2026-07-01',periodEnd:'2026-07-31'}}}];
+  const settings=Object.assign({},config.calendar,{startYear:2026,endYear:2026,holidays:{}}),calendar=SIP.BusinessCalendar.build(parsed,context,settings);
+  const records=[
+    SIP.Normalizer.masterRecord({recordId:'A',moduleId:'SALES',metricId:'SALES_AMOUNT',eventDate:'2026-07-01',srId:'SR:1',numericValue:10,qualityStatus:'VALID'}),
+    SIP.Normalizer.masterRecord({recordId:'B',moduleId:'SALES',metricId:'SALES_AMOUNT',eventDate:'2026-07-01',srId:'SR:2',numericValue:0,qualityStatus:'VALID'})
+  ];
+  const result=SIP.SalesActivityAttendance.resolve({records},[],calendar,context);
+  equal(result.providerContract,'ATTENDANCE_PROVIDER_V1');
+  equal(result.attendanceType,'SALES_ACTIVITY_NOT_HR');
+  equal(result.hrAttendance,false);
+  equal(result.employeeCount,2);
+  equal(result.workingDays,4);
+  equal(result.present,1);
+  equal(result.absent,7);
+  ok(result.records.every(x=>x.metric_id==='SALES_ACTIVITY_ATTENDANCE_STATUS'));
+  ok(result.records.every(x=>x.event_date!=='2026-07-03'));
+});
+
 test('documents the production sales control variance and keeps atomic daily facts authoritative', () => {
   const diagnostics=new SIP.Diagnostics(),config=SIP.Config.get();
   const records=[

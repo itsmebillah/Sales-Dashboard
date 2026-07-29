@@ -10,6 +10,7 @@ SIP.Config = (function () {
       qualityResults: 'Quality Results',
       masterDataset: 'Master Dataset',
       calendar: 'Calendar',
+      holidays: 'Holiday',
       hierarchy: 'Hierarchy',
       relationships: 'Relationship Model'
     },
@@ -34,7 +35,11 @@ SIP.Config = (function () {
       timezone: 'Asia/Dhaka',
       cutoffPolicy: 'CLOSED_DAY_ONLY',
       weekendDays: [5],
-      publicHolidays: []
+      workingWeekDays: 6,
+      startYear: 2025,
+      endYear: 2032,
+      fiscalStartMonth: 7,
+      holidayApprovalStatus: 'APPROVED'
     },
     persistence: {
       chunkRows: 1000

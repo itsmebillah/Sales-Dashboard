@@ -1,5 +1,9 @@
 # Phase 2.5 — P0 Production Remediation Report
 
+## Release 3.3.0 extension — P0-2
+
+The official Calendar now spans 2025–2032, reads approved holidays from the governed `Holiday` worksheet, applies a six-day week with Friday closed and Saturday working, and exposes fiscal periods. Sales Activity Attendance is derived from valid sales only through a replaceable provider contract and is explicitly not HR attendance. See `BUSINESS_CALENDAR_IMPLEMENTATION.md` and `SALES_ACTIVITY_ATTENDANCE_PHASE1.md`.
+
 Status: **P0-1 through P0-7 closed. P0-8 code complete; daily trigger authorization pending. Overall phase remains NOT CERTIFIED until the owner installs and verifies the trigger.**
 
 Production Script ID: `1H88OzmYKwSNSOx8X4K_seVPZkP8xB7EOMUciAdClS5qLEF1s04gyr7oi`  

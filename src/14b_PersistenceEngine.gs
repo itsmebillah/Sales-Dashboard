@@ -3,8 +3,8 @@ SIP.PersistenceEngine=(function(){
   function persist(spreadsheet,master,config){
     var started=Date.now();
     var masterResult=replace(spreadsheet.getSheetByName(config.sheets.masterDataset),MASTER_HEADERS,master.records.map(function(r){return MASTER_HEADERS.map(function(h){return value(r[h]);});}),config.persistence.chunkRows);
-    var calendarHeaders=['date_id','calendar_date','year','quarter','month_number','month_name','year_month','week_of_year','day_of_month','day_of_week_number','day_name','is_weekend','is_holiday','is_working_day','selling_day_index','calendar_status'];
-    var calendarResult=replace(spreadsheet.getSheetByName(config.sheets.calendar),calendarHeaders,master.calendar.rows.map(function(r){return [r.dateId,r.date,r.year,r.quarter,r.monthNumber,r.monthName,r.yearMonth,r.weekOfYear,r.dayOfMonth,r.dayOfWeekNumber,r.dayName,r.isWeekend,r.isHoliday,r.isWorkingDay,r.sellingDayIndex,r.status];}),config.persistence.chunkRows);
+    var calendarHeaders=['date_id','calendar_date','year','quarter','month_number','month_name','year_month','week_of_year','day_of_month','day_of_week_number','day_name','is_weekend','is_holiday','is_working_day','selling_day_index','calendar_status','fiscal_year','fiscal_quarter','holiday_name','holiday_approval'];
+    var calendarResult=replace(spreadsheet.getSheetByName(config.sheets.calendar),calendarHeaders,master.calendar.rows.map(function(r){return [r.dateId,r.date,r.year,r.quarter,r.monthNumber,r.monthName,r.yearMonth,r.weekOfYear,r.dayOfMonth,r.dayOfWeekNumber,r.dayName,r.isWeekend,r.isHoliday,r.isWorkingDay,r.sellingDayIndex,r.status,r.fiscalYear,r.fiscalQuarter,r.holidayName,r.holidayApproval];}),config.persistence.chunkRows);
     var hierarchyHeaders=['hierarchy_record_id','hierarchy_type','child_entity_type','child_entity_id','parent_entity_type','parent_entity_id','level_code','level_number','effective_from','effective_to','is_primary','status_code','source_system','source_record_id','version'];
     var hierarchyResult=replace(spreadsheet.getSheetByName(config.sheets.hierarchy),hierarchyHeaders,master.hierarchy.map(function(h){var types=hierarchyTypes(h.type);return [h.hierarchyId,h.type,types.child,h.childId,types.parent,h.parentId,h.type,types.level,h.effectiveFrom,h.effectiveTo,true,'ACTIVE','DATA_ENGINE','',h.version||'1.0.0'];}),config.persistence.chunkRows);
     var relationshipHeaders=['relationship_id','subject_entity_type','subject_entity_id','relationship_type','object_entity_type','object_entity_id','role_code','allocation_weight','effective_from','effective_to','is_primary','status_code','source_system','source_record_id','attributes_json','version'];
@@ -14,8 +14,9 @@ SIP.PersistenceEngine=(function(){
   }
   function replace(sheet,headers,rows,chunk){
     if(!sheet)throw new Error('Required persistence sheet is missing');
-    var required=Math.max(2,rows.length+1),max=sheet.getMaxRows?sheet.getMaxRows():required;
+    var required=Math.max(2,rows.length+1),max=sheet.getMaxRows?sheet.getMaxRows():required,maxColumns=sheet.getMaxColumns?sheet.getMaxColumns():headers.length;
     if(max<required&&sheet.insertRowsAfter)sheet.insertRowsAfter(max,required-max);
+    if(maxColumns<headers.length&&sheet.insertColumnsAfter)sheet.insertColumnsAfter(maxColumns,headers.length-maxColumns);
     var previous=Math.max(0,(sheet.getLastRow?sheet.getLastRow():1)-1);
     if(previous&&sheet.getRange)sheet.getRange(2,1,previous,headers.length).clearContent();
     sheet.getRange(1,1,1,headers.length).setValues([headers]);
