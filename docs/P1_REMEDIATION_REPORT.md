@@ -1,8 +1,10 @@
 # P1 Remediation Report
 
-Release: 3.5.1
+Release: 3.5.4
 
 Production patch 3.5.1 increases persistence batches from 1,000 to 5,000 rows, reducing Apps Script spreadsheet write round trips while preserving identical row-level output.
+
+Production v3.5.4 certified batch `BATCH_1918bd458d46ef65bbdecfeb`. Final roster counts are 428 SR, 53 TSO and 13 RSM. The three-day posting policy produced data cutoff 2026-07-26, 22 matured working days, 4 remaining working days, matured Sales 51,005,206 and baseline forecast 60,278,879.82. Fresh cache-only mobile hydration completed in 9.503 seconds with no horizontal overflow.
 
 ## P0 closure
 
