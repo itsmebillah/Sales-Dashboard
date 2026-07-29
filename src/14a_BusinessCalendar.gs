@@ -20,7 +20,7 @@ SIP.BusinessCalendar = (function () {
   }
 
   function build(parsed,context,settings) {
-    settings=settings||context.config.calendar;var asOf=(context.ingestedAt||U.nowIso()).slice(0,10),cutoffDate=shiftDate(asOf,-Number(settings.postingLagDays||0)),rows=[],holidayMap=settings.holidays||{};
+    settings=settings||context.config.calendar;var instant=new Date(context.ingestedAt||U.nowIso()),asOf=typeof Utilities!=='undefined'&&Utilities.formatDate?Utilities.formatDate(instant,settings.timezone||'Asia/Dhaka','yyyy-MM-dd'):instant.toISOString().slice(0,10),cutoffDate=shiftDate(asOf,-Number(settings.postingLagDays||0)),rows=[],holidayMap=settings.holidays||{};
     for(var year=settings.startYear;year<=settings.endYear;year++){
       var date=new Date(Date.UTC(year,0,1)),end=new Date(Date.UTC(year,11,31)),sellingByMonth={};
       while(date<=end){

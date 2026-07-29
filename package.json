@@ -1,6 +1,6 @@
 {
   "name": "sales-intelligence-platform",
-  "version": "3.5.4",
+  "version": "3.5.5",
   "private": true,
   "scripts": {
     "test": "node tests/run-tests.js",

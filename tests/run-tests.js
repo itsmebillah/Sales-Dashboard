@@ -384,6 +384,23 @@ test('uses CLOSED_DAY_ONLY with the approved three-day posting maturity lag', ()
   ok(calendar.current.elapsed+calendar.current.remaining===calendar.current.total);
 });
 
+test('uses the Bangladesh business date across the UTC midnight boundary', () => {
+  const originalFormatDate=sandbox.Utilities.formatDate;
+  sandbox.Utilities.formatDate=(date,timeZone) => {
+    const offsetHours=timeZone==='Asia/Dhaka'?6:0;
+    return new Date(new Date(date).getTime()+offsetHours*60*60*1000).toISOString().slice(0,10);
+  };
+  try {
+    const context={config:SIP.Config.get(),diagnostics:new SIP.Diagnostics(),ingestedAt:'2026-07-29T23:30:00.000Z'};
+    const parsed=[{sourceId:'SRC_SALES_MONTHLY',records:[],metadata:{period:{periodStart:'2026-07-01',periodEnd:'2026-07-31'},monthlyWorkingDays:26}}];
+    const calendar=SIP.BusinessCalendar.build(parsed,context);
+    equal(calendar.asOfDate,'2026-07-30');
+    equal(calendar.dataCutoffDate,'2026-07-27');
+  } finally {
+    sandbox.Utilities.formatDate=originalFormatDate;
+  }
+});
+
 test('generates the governed 2025-2032 calendar with Friday-only closure and fiscal periods', () => {
   const config=SIP.Config.get(),context={config,diagnostics:new SIP.Diagnostics(),ingestedAt:'2026-07-29T16:00:00Z'};
   const parsed=[{sourceId:'SRC_SALES_MONTHLY',records:[],metadata:{period:{periodStart:'2026-07-01',periodEnd:'2026-07-31'}}}];
