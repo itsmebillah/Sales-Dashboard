@@ -1,6 +1,8 @@
 # P1 Remediation Report
 
-Release: 3.4.0
+Release: 3.5.1
+
+Production patch 3.5.1 increases persistence batches from 1,000 to 5,000 rows, reducing Apps Script spreadsheet write round trips while preserving identical row-level output.
 
 ## P0 closure
 

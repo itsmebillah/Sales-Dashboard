@@ -44,7 +44,7 @@ SIP.Config = (function () {
       monthCloseDay: 4
     },
     persistence: {
-      chunkRows: 1000
+      chunkRows: 5000
     },
     maintenance: {
       scheduleHour: 3,
