@@ -1,0 +1,15 @@
+<script>
+window.BI=window.BI||{};
+BI.state={data:null,scope:null,activeLevel:'COMPANY',search:'',page:1,pageSize:15,sortKey:'sales',sortDirection:'desc',chartHits:{}};
+BI.$=id=>document.getElementById(id);
+BI.number=value=>value===null||value===undefined||!Number.isFinite(Number(value))?'—':new Intl.NumberFormat('en-US',{useGrouping:true,minimumFractionDigits:Number(value)%1?2:0,maximumFractionDigits:2}).format(Number(value));
+BI.percent=value=>value===null||value===undefined||!Number.isFinite(Number(value))?'—':new Intl.NumberFormat('en-US',{style:'percent',minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value));
+BI.date=value=>{if(!value)return'Not available';const d=new Date(value);return Number.isNaN(d.getTime())?'Not available':d.toLocaleString('en-US',{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'})};
+BI.escape=value=>String(value==null?'':value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+BI.title=value=>String(value||'').toLowerCase().replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+BI.entityName=(entity,type,index)=>{const value=typeof entity==='object'&&entity?entity:{};const certified=value.displayName||value.entityName||value.name||value.label;if(certified&&!/^(EMPLOYEE_NAME|PRODUCT|DEALER|RSM|TSO|SR):/i.test(certified))return certified;const level=type||value.entityType||'Entity';const rows=(BI.state.data&&BI.state.data.hierarchy&&BI.state.data.hierarchy[level])||[];const found=rows.findIndex(x=>x.entityId===value.entityId),position=found>=0?found:Math.max(0,index||0);return level==='COMPANY'?'Company total':BI.title(level)+' '+String(position+1).padStart(2,'0')};
+BI.findEntity=(type,id)=>((BI.state.data&&BI.state.data.hierarchy[type])||[]).find(x=>x.entityId===id);
+BI.empty=(title,copy)=>'<div class="empty-state"><strong>'+BI.escape(title)+'</strong><span>'+BI.escape(copy)+'</span></div>';
+BI.toast=message=>{const node=BI.$('toast');node.textContent=message;node.classList.add('show');clearTimeout(BI.toastTimer);BI.toastTimer=setTimeout(()=>node.classList.remove('show'),2600)};
+BI.debounce=(fn,delay=140)=>{let timeout;return(...args)=>{clearTimeout(timeout);timeout=setTimeout(()=>fn(...args),delay)}};
+</script>

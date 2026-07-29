@@ -1,0 +1,6 @@
+<script>
+BI.Theme={
+  init(){const saved=localStorage.getItem('sip-theme');const dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;this.set(saved||(dark?'dark':'light'));BI.$('themeButton').addEventListener('click',()=>this.set(document.documentElement.dataset.theme==='dark'?'light':'dark'));BI.$('menuButton').addEventListener('click',()=>BI.$('sidebar').classList.toggle('open'));document.querySelectorAll('.nav-item').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));button.classList.add('active');BI.$(button.dataset.target).scrollIntoView({behavior:'smooth'});BI.$('sidebar').classList.remove('open')}));},
+  set(theme){document.documentElement.dataset.theme=theme;localStorage.setItem('sip-theme',theme);if(BI.state.data)requestAnimationFrame(()=>BI.Charts.renderAll(BI.state.scope||BI.state.data.executive));}
+};
+</script>

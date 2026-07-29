@@ -1,5 +1,33 @@
 # Release Notes
 
+## 3.0.0 — Phase 7 Production Executive BI Dashboard
+
+- Rebuilt the Apps Script HTML Service frontend as a polished executive BI
+  workspace with light and dark themes.
+- Added global RSM, TSO, SR, dealer, product, and report-search controls without
+  page reloads. Unsupported date, region, zone, and category dimensions are
+  disclosed rather than fabricated.
+- Added exact-value KPI cards, responsive Canvas charts, exact-value hover
+  tooltips, achievement gauge, forecast summary, commercial-flow analysis,
+  dealer and product rankings, risk monitoring, and AI-ready insights.
+- Added searchable, sortable, sticky-header, paginated, CSV-exportable BI
+  reports.
+- Added loading skeletons, cache-miss and connection states, empty states,
+  refresh elapsed-time feedback, responsive navigation, mobile layouts, and
+  touch-friendly controls.
+- Split the browser implementation into reusable formatting, theme, filters,
+  charts, tables, and orchestration modules.
+- Preserved the cache-only initial load and single-build refresh workflow. No
+  KPI formula, parser, forecast, or risk calculation was changed.
+- Added frontend syntax and architecture regression tests, bringing the suite to
+  16 passing test groups.
+
+Contract limitation: the current certified KPI snapshot does not contain a
+business-name dictionary, date series, region, zone, or category dimensions.
+The frontend never exposes raw or hashed entity IDs; it uses certified labels
+when available and stable executive aliases otherwise. These dimensions require
+an additive certified contract enhancement in the data-accuracy phase.
+
 ## 1.1.0 — Phase 4 KPI Engine
 
 - Added one-pass KPI aggregation over the Master Dataset.

@@ -1,0 +1,9 @@
+<script>
+BI.Filters={
+  levels:['RSM','TSO','SR','DEALER','PRODUCT'],
+  init(){this.levels.forEach(level=>BI.$('filter'+level).addEventListener('change',event=>this.select(level,event.target.value)));BI.$('clearFilters').addEventListener('click',()=>this.clear());BI.$('globalSearch').addEventListener('input',BI.debounce(event=>{BI.state.search=event.target.value.trim().toLowerCase();BI.state.page=1;BI.Tables.render()}));BI.$('reportLevel').addEventListener('change',()=>{BI.state.page=1;BI.Tables.render()});},
+  populate(){this.levels.forEach(level=>{const select=BI.$('filter'+level),rows=BI.state.data.hierarchy[level]||[];select.innerHTML='<option value="">All '+BI.title(level)+'</option>'+rows.map((row,index)=>'<option value="'+BI.escape(row.entityId)+'">'+BI.escape(BI.entityName(row,level,index))+'</option>').join('');select.disabled=!rows.length;});},
+  select(level,id){this.levels.forEach(other=>{if(other!==level)BI.$('filter'+other).value=''});BI.state.activeLevel=id?level:'COMPANY';BI.state.scope=id?BI.findEntity(level,id):BI.state.data.executive;BI.state.page=1;BI.render();},
+  clear(){this.levels.forEach(level=>BI.$('filter'+level).value='');BI.$('globalSearch').value='';BI.state.search='';BI.state.activeLevel='COMPANY';BI.state.scope=BI.state.data.executive;BI.state.page=1;BI.render();}
+};
+</script>

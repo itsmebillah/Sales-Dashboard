@@ -239,6 +239,27 @@ test('refreshes KPIs from the supplied certified Master Dataset without reparsin
   } finally { SIP.DataEngine.get=original; cache.clear(); }
 });
 
+test('compiles every modular HTML Service browser script', () => {
+  const htmlDir=path.join(root,'src','html');
+  const scripts=fs.readdirSync(htmlDir).filter(file=>file.endsWith('.html')).map(file=>({file,source:fs.readFileSync(path.join(htmlDir,file),'utf8')}));
+  scripts.forEach(({file,source})=>{
+    const blocks=[...source.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+    blocks.forEach((block,index)=>new vm.Script(block[1],{filename:`${file}:${index+1}`}));
+  });
+  ok(scripts.some(x=>x.file==='Charts.html'));
+  ok(scripts.some(x=>x.file==='Tables.html'));
+  ok(scripts.some(x=>x.file==='Filters.html'));
+});
+
+test('enforces exact-number dashboard formatting and cache-only hydration', () => {
+  const htmlDir=path.join(root,'src','html');
+  const source=fs.readdirSync(htmlDir).filter(file=>file.endsWith('.html')).map(file=>fs.readFileSync(path.join(htmlDir,file),'utf8')).join('\n');
+  ok(!/notation\s*:\s*['"]compact['"]/.test(source),'compact number notation is prohibited');
+  ok(source.includes("useGrouping:true"),'exact grouped-number formatter is required');
+  ok(source.includes('.getCachedDashboardApi()'),'initial hydration must use certified KPI cache');
+  ok(!/BI\.boot[\s\S]{0,500}runDataEngine/.test(source),'dashboard boot must never start the Data Engine');
+});
+
 process.on('exit', () => {
   if (!process.exitCode) console.log(`\n${passed} tests passed.`);
 });
