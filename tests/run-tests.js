@@ -215,6 +215,30 @@ test('rejects a KPI cache generation from an older Master Dataset batch', () => 
   } finally { SIP.DataEngine.get=original; }
 });
 
+test('reads the certified dashboard cache without invoking the Data Engine', () => {
+  cache.clear();
+  const config=SIP.Config.get({cache:{namespace:'SIP_KPI_V1',chunkChars:1000,maxChunks:20,ttlSeconds:60}});
+  SIP.CacheEngine.put({batchId:'CACHE_ONLY',generatedAt:'2026-07-29',executive:{sales:42},dealers:{top:[],bottom:[]},products:{topProducts:[],bottomProducts:[]}},config,new SIP.Diagnostics());
+  const original=SIP.DataEngine.get;
+  SIP.DataEngine.get=()=>{throw new Error('Data Engine must not run during dashboard load');};
+  try {
+    const result=SIP.KpiService.getCached({config:{cache:{chunkChars:1000,maxChunks:20,ttlSeconds:60}}});
+    equal(result.snapshot.batchId,'CACHE_ONLY');
+    equal(result.snapshot.executive.sales,42);
+  } finally { SIP.DataEngine.get=original; cache.clear(); }
+});
+
+test('refreshes KPIs from the supplied certified Master Dataset without reparsing', () => {
+  cache.clear();
+  const original=SIP.DataEngine.get;
+  SIP.DataEngine.get=()=>{throw new Error('Data Engine must not be called twice');};
+  try {
+    const result=SIP.KpiService.refreshFromMaster({schemaVersion:'1.0.0',batchId:'ONE_PARSE',records:[],qualityFlags:[]},{config:{cache:{chunkChars:1000,maxChunks:100,ttlSeconds:60}}});
+    equal(result.snapshot.batchId,'ONE_PARSE');
+    equal(result.master.batchId,'ONE_PARSE');
+  } finally { SIP.DataEngine.get=original; cache.clear(); }
+});
+
 process.on('exit', () => {
   if (!process.exitCode) console.log(`\n${passed} tests passed.`);
 });
