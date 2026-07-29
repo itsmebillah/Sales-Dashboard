@@ -23,14 +23,14 @@ function getDashboardApi(view) {
 }
 
 function dashboardCacheConfig() {
-  return SIP.Config.get({cache:{namespace:'SIP_DASHBOARD_V1',ttlSeconds:21600,chunkChars:80000,maxChunks:20}});
+  return SIP.Config.get({cache:{namespace:'SIP_DASHBOARD_V1',ttlSeconds:21600,chunkChars:30000,maxChunks:60}});
 }
 
 /** Publish and verify the compact certified consumer projection. */
 function publishDashboardApi(snapshot) {
   var data=dashboardPayload(snapshot).data,diagnostics=new SIP.Diagnostics(),config=dashboardCacheConfig();
   var result=SIP.CacheEngine.put(data,config,diagnostics);
-  if(!result.cached)throw new Error('Certified dashboard cache exceeded its governed capacity');
+  if(!result.cached)throw new Error('Certified dashboard cache publication failed: '+(result.reason||'CAPACITY')+' ('+(result.missing||0)+' missing of '+(result.chunks||0)+' chunks)');
   var verified=SIP.CacheEngine.get(config,diagnostics);
   if(!verified||verified.batchId!==data.batchId)throw new Error('Certified dashboard cache publication verification failed');
   return{data:data,cache:result};

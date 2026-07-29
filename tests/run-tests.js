@@ -239,6 +239,13 @@ test('refreshes KPIs from the supplied certified Master Dataset without reparsin
   } finally { SIP.DataEngine.get=original; cache.clear(); }
 });
 
+test('publishes cache chunks in bounded transport batches', () => {
+  const source=fs.readFileSync(path.join(root,'src','15_CacheEngine.gs'),'utf8');
+  ok(source.includes('batchChars + chunk.length > 90000'));
+  ok(source.includes("reason: 'PUBLICATION_INCOMPLETE'"));
+  ok(source.indexOf('cache.getAll(keys)')<source.indexOf('cache.put(metaKey(config)'),'metadata must publish only after chunk verification');
+});
+
 test('publishes a compact certified dashboard cache for fresh-page hydration', () => {
   cache.clear();
   const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'DASHBOARD_CACHE',records:[],qualityFlags:[],dimensions:{}});
