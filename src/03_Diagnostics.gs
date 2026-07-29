@@ -20,7 +20,7 @@ SIP.Diagnostics.prototype.issue = function (severity, code, message, context) {
 
 SIP.Diagnostics.prototype.finish = function () {
   return {
-    status: this.issues.some(function (x) { return x.severity === 'ERROR'; }) ? 'COMPLETED_WITH_ERRORS' :
+    status: this.issues.some(function (x) { return x.severity === 'ERROR'; }) ? 'FAILED' :
       (this.issues.some(function (x) { return x.severity === 'WARN'; }) ? 'COMPLETED_WITH_WARNINGS' : 'COMPLETED'),
     executionMs: Date.now() - this.startedAt,
     sources: this.sources,

@@ -239,6 +239,18 @@ test('refreshes KPIs from the supplied certified Master Dataset without reparsin
   } finally { SIP.DataEngine.get=original; cache.clear(); }
 });
 
+test('emits only statuses accepted by the Import Batches sheet contract', () => {
+  const successful = new SIP.Diagnostics().finish();
+  equal(successful.status, 'COMPLETED');
+  const warning = new SIP.Diagnostics();
+  warning.issue('WARN', 'TEST_WARNING', 'warning');
+  equal(warning.finish().status, 'COMPLETED_WITH_WARNINGS');
+  const failed = new SIP.Diagnostics();
+  failed.issue('ERROR', 'TEST_ERROR', 'error');
+  equal(failed.finish().status, 'FAILED');
+  ok(['QUEUED', 'RUNNING', 'COMPLETED', 'COMPLETED_WITH_WARNINGS', 'FAILED', 'REJECTED'].includes(failed.finish().status));
+});
+
 test('publishes certified business display names without exposing raw entity IDs', () => {
   const master={schemaVersion:'1.0.0',batchId:'LABELS',records:[],qualityFlags:[],dimensions:{
     employees:{'EMPLOYEE:1':{id:'EMPLOYEE:1',name:'Ayesha Rahman',role:'RSM'},'EMPLOYEE:2':{id:'EMPLOYEE:2',name:'Tanvir Ahmed',role:'TSO'}},
