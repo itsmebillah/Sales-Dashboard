@@ -1,6 +1,7 @@
 const { chromium } = require('playwright-core');
 
 async function main() {
+  const auditStarted = Date.now();
   const url = process.env.PRODUCTION_WEB_APP_URL;
   const executablePath = process.env.BROWSER_EXECUTABLE;
   if (!url || !executablePath) throw new Error('PRODUCTION_WEB_APP_URL and BROWSER_EXECUTABLE are required');
@@ -27,8 +28,10 @@ async function main() {
   if (!appFrame) throw new Error(`Apps Script application frame did not load. Frames: ${page.frames().map(frame => frame.url()).join(', ')}`);
 
   if (process.env.TRIGGER_REFRESH === 'true') {
+    var refreshStarted = Date.now();
     await appFrame.locator('#refreshButton').click();
     await appFrame.locator('#refreshButton:not([disabled])').waitFor({ timeout: 360000 });
+    var refreshWallMs = Date.now() - refreshStarted;
   } else {
     await appFrame.waitForFunction(() => document.getElementById('statusTitle').textContent !== 'Loading certified dashboard', null, { timeout: 120000 });
   }
@@ -48,6 +51,20 @@ async function main() {
   }
 
   const read = selector => appFrame.locator(selector).first().textContent().catch(() => null);
+  const cacheProbeStarted = Date.now();
+  const cacheHealth = await appFrame.evaluate(() => new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getDashboardApi('health');
+  }));
+  const cacheProbeWallMs = Date.now() - cacheProbeStarted;
+  const renderTimings = await appFrame.evaluate(() => {
+    const now = () => performance.now();
+    let started = now(); BI.Charts.renderAll(BI.state.scope || BI.state.data.executive); const chartMs = now() - started;
+    started = now(); BI.Tables.render(); const reportMs = now() - started;
+    const first = BI.state.data.hierarchy.RSM && BI.state.data.hierarchy.RSM[0];
+    started = now(); if (first) BI.Filters.select('RSM', first.entityId); const filterMs = now() - started;
+    if (first) BI.Filters.clear();
+    return { chartMs, reportMs, filterMs };
+  });
   let interaction = null;
   if (process.env.RUN_INTERACTIONS === 'true') {
     const rsm = appFrame.locator('#filterRSM');
@@ -60,10 +77,35 @@ async function main() {
       const hit = BI.state.chartHits.flow && BI.state.chartHits.flow[0];
       const canvas = document.getElementById('flowChart');
       if (!hit || !canvas) return false;
-      canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: hit.x + Math.max(1, hit.w / 2), clientY: hit.y + Math.max(1, hit.h / 2), bubbles: true }));
+      const rect = canvas.getBoundingClientRect();
+      canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: rect.left + hit.x + Math.max(1, hit.w / 2), clientY: rect.top + hit.y + Math.max(1, hit.h / 2), bubbles: true }));
       return getComputedStyle(document.getElementById('flowTooltip')).display !== 'none';
     });
     interaction = { selectedRsm: values[0] || null, scopeName: await read('#scopeName'), tooltipShown };
+  }
+
+  let filterAudit = null;
+  if (process.env.FILTER_AUDIT === 'true') {
+    filterAudit = await appFrame.evaluate(async () => {
+      const levels = ['RSM', 'TSO', 'SR', 'DEALER', 'PRODUCT'];
+      const results = [];
+      for (const level of levels) {
+        const select = document.getElementById('filter' + level);
+        const id = [...select.options].map(option => option.value).find(Boolean);
+        const expected = id && BI.findEntity(level, id);
+        if (id) BI.Filters.select(level, id);
+        results.push({
+          level, optionCount: Math.max(0, select.options.length - 1), selected: !!id,
+          entityMatch: !!expected && BI.state.scope === expected,
+          salesMatch: !!expected && document.querySelector('.kpi-card .kpi-value').textContent === BI.number(expected.sales)
+        });
+        BI.Filters.clear();
+      }
+      const disabled = ['Date', 'Region', 'Category'].reduce((out, name) => {
+        out[name] = document.getElementById('filter' + name).disabled; return out;
+      }, {});
+      return { levels: results, disabled, cascadingHierarchy: false };
+    });
   }
 
   const result = {
@@ -77,6 +119,31 @@ async function main() {
     cacheGenerationTimestamp: await appFrame.evaluate(() => BI.state.data && BI.state.data.generatedAt || null),
     cacheBatchId: await appFrame.evaluate(() => BI.state.data && BI.state.data.batchId || null),
     certification: await read('#certification'),
+    executive: await appFrame.evaluate(() => {
+      const x = BI.state.data && BI.state.data.executive;
+      if (!x) return null;
+      return {
+        sales: x.sales, target: x.target, achievementPct: x.achievementPct, gap: x.gap,
+        forecast: x.forecast, forecastAchievementPct: x.forecastAchievementPct,
+        averageDailySales: x.averageDailySales, requiredDailySales: x.requiredDailySales,
+        currentWorkingDay: x.currentWorkingDay, dueWorkingDay: x.dueWorkingDay, totalWorkingDay: x.totalWorkingDay,
+        collection: x.collection, projection: x.projection, lifting: x.lifting, stock: x.stock,
+        secondary: x.secondary, productVolume: x.productVolume, dealerCount: x.dealerCount,
+        srCount: x.srCount, tsoCount: x.tsoCount, rsmCount: x.rsmCount, productCount: x.productCount,
+        growthPct: x.growthPct, growthComparable: x.growthComparable, momentumPct: x.momentumPct,
+        forecastBase: x.forecastBase
+      };
+    }),
+    cachePerformance: await appFrame.evaluate(() => BI.state.data && BI.state.data.performance || null),
+    measuredPerformance: {
+      dashboardReadyMs: Date.now() - auditStarted,
+      cacheProbeWallMs,
+      cacheServerResponseMs: cacheHealth && cacheHealth.data && cacheHealth.data.responseMs,
+      refreshWallMs: typeof refreshWallMs === 'number' ? refreshWallMs : null,
+      chartRenderMs: renderTimings.chartMs,
+      filterResponseMs: renderTimings.filterMs,
+      reportRenderMs: renderTimings.reportMs
+    },
     kpiCards: await appFrame.locator('.kpi-card').count(),
     canvases: await appFrame.locator('canvas').count(),
     filterControls: await appFrame.locator('.filter-grid select, .filter-grid input').count(),
@@ -86,6 +153,7 @@ async function main() {
     bodyScrollWidth: await appFrame.locator('body').evaluate(element => element.scrollWidth),
     viewportWidth: await appFrame.evaluate(() => innerWidth),
     interaction,
+    filterAudit,
     consoleErrors,
     pageErrors
   };
