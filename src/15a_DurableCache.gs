@@ -1,34 +1,33 @@
-/** Durable L2 cache for compact certified consumer payloads. */
+/** Durable L2 cache stored only in the approved production spreadsheet. */
 SIP.DurableCache = (function () {
-  var PREFIX='SIP_DASHBOARD_DURABLE_V1',META=PREFIX+':META',CHUNK_CHARS=8000,MAX_CHUNKS=60;
-  function store(){return PropertiesService.getScriptProperties();}
-  function chunkKey(generation,index){return PREFIX+':'+generation+':'+index;}
+  var SHEET='Dashboard Cache',SCHEMA='SIP_DASHBOARD_CACHE_V1',CHUNK_CHARS=30000,MAX_CHUNKS=60;
   function encode(json){return Utilities.gzip?Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(json,'application/json')).getBytes()):json;}
   function decode(payload){return Utilities.ungzip?Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(payload))).getDataAsString():payload;}
+  function spreadsheet(){return SpreadsheetApp.openById(SIP.Config.get().spreadsheetId);}
+  function cacheSheet(create){var book=spreadsheet(),sheet=book.getSheetByName(SHEET);if(!sheet&&create){sheet=book.insertSheet(SHEET);sheet.hideSheet();}return sheet;}
   function put(value){
     var json=JSON.stringify(value),payload=encode(json),chunks=[];
     for(var i=0;i<payload.length;i+=CHUNK_CHARS)chunks.push(payload.slice(i,i+CHUNK_CHARS));
     if(chunks.length>MAX_CHUNKS)return{cached:false,reason:'DURABLE_CAPACITY',chunks:chunks.length,maxChunks:MAX_CHUNKS};
-    var properties=store(),previous=parse(properties.getProperty(META)),generation=SIP.Utils.hash([value.batchId,value.generatedAt,json.length]).slice(0,16),entries={},batchChars=0;
-    chunks.forEach(function(chunk,index){
-      if(batchChars&&batchChars+chunk.length>80000){properties.setProperties(entries,false);entries={};batchChars=0;}
-      entries[chunkKey(generation,index)]=chunk;batchChars+=chunk.length;
-    });
-    if(batchChars)properties.setProperties(entries,false);
-    properties.setProperty(META,JSON.stringify({generation:generation,chunks:chunks.length,hash:SIP.Utils.hash(json),generatedAt:value.generatedAt,batchId:value.batchId}));
+    var sheet=cacheSheet(true),generation=SIP.Utils.hash([value.batchId,value.generatedAt,json.length]).slice(0,16),start=Math.max(2,sheet.getLastRow()+1);
+    var rows=chunks.map(function(chunk,index){return[generation,index,chunk];});
+    sheet.getRange(start,1,rows.length,3).setValues(rows);
+    var meta={schema:SCHEMA,generation:generation,chunks:chunks.length,hash:SIP.Utils.hash(json),generatedAt:value.generatedAt,batchId:value.batchId};
+    sheet.getRange(1,1,1,3).setValues([[SCHEMA,JSON.stringify(meta),value.generatedAt]]);
+    SpreadsheetApp.flush();
     var verified=get();
-    if(!verified||verified.batchId!==value.batchId){removeGeneration(properties,generation,chunks.length);return{cached:false,reason:'DURABLE_VERIFICATION_FAILED',chunks:chunks.length};}
-    if(previous&&previous.generation!==generation)removeGeneration(properties,previous.generation,previous.chunks);
-    return{cached:true,generation:generation,chunks:chunks.length,encodedChars:payload.length};
+    if(!verified||verified.batchId!==value.batchId)return{cached:false,reason:'DURABLE_VERIFICATION_FAILED',chunks:chunks.length};
+    return{cached:true,generation:generation,chunks:chunks.length,encodedChars:payload.length,sheet:SHEET};
   }
   function get(){
-    var properties=store(),meta=parse(properties.getProperty(META));if(!meta)return null;
-    var all=properties.getProperties(),payload='';
-    for(var i=0;i<meta.chunks;i++){var chunk=all[chunkKey(meta.generation,i)];if(!chunk)return null;payload+=chunk;}
-    try{var json=decode(payload);if(SIP.Utils.hash(json)!==meta.hash)return null;return JSON.parse(json);}catch(error){return null;}
+    var sheet=cacheSheet(false);if(!sheet||sheet.getLastRow()<2)return null;
+    var meta=parse(sheet.getRange(1,2).getValue());if(!meta||meta.schema!==SCHEMA)return null;
+    var values=sheet.getRange(2,1,sheet.getLastRow()-1,3).getValues(),chunks=[];
+    values.forEach(function(row){if(row[0]===meta.generation)chunks[Number(row[1])]=String(row[2]||'');});
+    if(chunks.length!==meta.chunks||chunks.some(function(chunk){return !chunk;}))return null;
+    try{var json=decode(chunks.join(''));if(SIP.Utils.hash(json)!==meta.hash)return null;return JSON.parse(json);}catch(error){return null;}
   }
-  function remove(){var properties=store(),meta=parse(properties.getProperty(META));if(meta)removeGeneration(properties,meta.generation,meta.chunks);properties.deleteProperty(META);}
-  function removeGeneration(properties,generation,count){for(var i=0;i<(count||0);i++)properties.deleteProperty(chunkKey(generation,i));}
-  function parse(value){try{return value?JSON.parse(value):null;}catch(error){return null;}}
+  function remove(){var sheet=cacheSheet(false);if(sheet)sheet.clearContents();}
+  function parse(value){try{return value?JSON.parse(String(value)):null;}catch(error){return null;}}
   return{put:put,get:get,remove:remove};
 }());

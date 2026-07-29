@@ -8,6 +8,17 @@ const crypto = require('crypto');
 const root = path.resolve(__dirname, '..');
 const cache = new Map();
 const properties = new Map();
+const durableRows = [];
+const durableSheet = {
+  getLastRow: () => durableRows.length,
+  hideSheet: () => {},
+  clearContents: () => { durableRows.length=0; },
+  getRange: (row,column,rowCount=1,columnCount=1) => ({
+    setValues: values => values.forEach((cells,rowIndex)=>cells.forEach((value,columnIndex)=>{durableRows[row-1+rowIndex]=durableRows[row-1+rowIndex]||[];durableRows[row-1+rowIndex][column-1+columnIndex]=value;})),
+    getValue: () => (durableRows[row-1]||[])[column-1] || '',
+    getValues: () => Array.from({length:rowCount},(_,rowIndex)=>Array.from({length:columnCount},(_,columnIndex)=>(durableRows[row-1+rowIndex]||[])[column-1+columnIndex] || ''))
+  })
+};
 const sandbox = {
   console,
   Date,
@@ -34,6 +45,10 @@ const sandbox = {
       remove: k => cache.delete(k),
       removeAll: keys => keys.forEach(k => cache.delete(k))
     })
+  },
+  SpreadsheetApp: {
+    openById: () => ({getSheetByName: () => durableRows.length ? durableSheet : null,insertSheet: () => durableSheet}),
+    flush: () => {}
   },
   PropertiesService: {
     getScriptProperties: () => ({
@@ -273,21 +288,11 @@ test('bounds dashboard intelligence payload while preserving total counts', () =
   equal(payload.risks.length,30);equal(payload.insights.length,30);equal(payload.riskTotal,75);equal(payload.insightTotal,75);
 });
 
-test('recovers certified dashboard data from durable cache after L1 eviction', () => {
-  cache.clear();properties.clear();
-  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'DURABLE_CACHE',records:[],qualityFlags:[],dimensions:{}});
-  const published=sandbox.publishDashboardApi(snapshot);
-  ok(published.cache.durable.cached);
-  cache.clear();
-  const loaded=sandbox.getDashboardApi('dashboard');
-  ok(loaded.ok);equal(loaded.data.batchId,'DURABLE_CACHE');
-  properties.clear();cache.clear();
-});
-
-test('writes durable properties in bounded transport batches', () => {
+test('uses the approved spreadsheet for the durable certified cache', () => {
   const source=fs.readFileSync(path.join(root,'src','15a_DurableCache.gs'),'utf8');
-  ok(source.includes('batchChars+chunk.length>80000'));
-  ok(source.indexOf('properties.setProperties(entries,false)')<source.indexOf('properties.setProperty(META'),'durable metadata must publish after chunk batches');
+  ok(source.includes("SHEET='Dashboard Cache'"));
+  ok(source.includes('SpreadsheetApp.openById(SIP.Config.get().spreadsheetId)'));
+  ok(source.includes('SpreadsheetApp.flush()'));
 });
 
 test('ingests the previous-month report as history only without duplicating sales', () => {

@@ -5,13 +5,15 @@ Spreadsheet ID: `1HxVEJqWqIc_xSGIBYJpJBIuHeqTaQiUUJ_Lc7jLKlSY`
 
 ## Decision
 
-All 21 worksheets are retained. No worksheet is currently verified as obsolete
+All 21 audited business and governance worksheets are retained. No worksheet is currently verified as obsolete
 or temporary. The runtime reads operational sources and writes diagnostic
 evidence; the remaining governed sheets are frozen platform contracts or
 plug-and-play extension surfaces required by the enterprise architecture.
 
 The certified Master Dataset and KPI snapshot use checksummed Apps Script
-CacheService generations. No worksheet is used as a runtime cache.
+CacheService generations. A hidden `Dashboard Cache` worksheet is generated as
+the durable L2 store for the compact certified browser payload because
+CacheService is best-effort and was observed evicting the production payload.
 
 ## Worksheet Classification
 
@@ -38,6 +40,7 @@ CacheService generations. No worksheet is used as a runtime cache.
 | Metric Store | Master | Reserved governed metric persistence surface | Keep |
 | Action Register | Master | Reserved risk and management-action workflow surface | Keep |
 | Audit Log | Production | Platform change and governance audit trail | Keep |
+| Dashboard Cache | Cache | Hidden durable certified payload; never stores raw source rows | Keep |
 
 ## Findings
 
