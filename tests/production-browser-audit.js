@@ -30,7 +30,21 @@ async function main() {
     await appFrame.locator('#refreshButton').click();
     await appFrame.locator('#refreshButton:not([disabled])').waitFor({ timeout: 360000 });
   } else {
-    await page.waitForTimeout(5000);
+    await appFrame.waitForFunction(() => document.getElementById('statusTitle').textContent !== 'Loading certified dashboard', null, { timeout: 120000 });
+  }
+
+  if (process.env.RELOAD_PAGE === 'true') {
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+    appFrame = null;
+    for (let i = 0; i < 60; i += 1) {
+      for (const frame of page.frames()) {
+        if (frame !== page.mainFrame() && await frame.locator('#statusTitle').count().catch(() => 0)) { appFrame = frame; break; }
+      }
+      if (appFrame) break;
+      await page.waitForTimeout(500);
+    }
+    if (!appFrame) throw new Error('Apps Script application frame did not reload.');
+    await appFrame.waitForFunction(() => document.getElementById('statusTitle').textContent !== 'Loading certified dashboard', null, { timeout: 120000 });
   }
 
   const read = selector => appFrame.locator(selector).first().textContent().catch(() => null);
@@ -58,6 +72,11 @@ async function main() {
     frameUrl: appFrame.url(),
     statusTitle: await read('#statusTitle'),
     statusText: await read('#statusText'),
+    lastRefresh: await read('#sideStamp'),
+    generatedLabel: await read('#generatedStamp'),
+    cacheGenerationTimestamp: await appFrame.evaluate(() => BI.state.data && BI.state.data.generatedAt || null),
+    cacheBatchId: await appFrame.evaluate(() => BI.state.data && BI.state.data.batchId || null),
+    certification: await read('#certification'),
     kpiCards: await appFrame.locator('.kpi-card').count(),
     canvases: await appFrame.locator('canvas').count(),
     filterControls: await appFrame.locator('.filter-grid select, .filter-grid input').count(),
