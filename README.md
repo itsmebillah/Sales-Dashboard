@@ -93,7 +93,7 @@ The suite covers parsing, normalization, relationship resolution, validation, ca
 
 ## Deployment
 
-The sheet-bound Apps Script project is deployed as a public HTML Service Web App that executes as the owner. Google Sheets remains private. Initial load calls only the certified KPI cache; explicit refresh runs the Data Engine once, recalculates KPIs from that Master Dataset, and republishes the cache. See [ADR-008](docs/ADR-008-CACHE-ONLY-HTML-SERVICE-RUNTIME.md).
+The standalone production Apps Script project is deployed as a public HTML Service Web App that executes as the deployer. It opens the private source spreadsheet by the governed ID in configuration; the browser never receives that spreadsheet or raw records. Initial load calls only the certified KPI cache; explicit refresh runs the Data Engine once, recalculates KPIs from that Master Dataset, and republishes the cache. See [ADR-008](docs/ADR-008-CACHE-ONLY-HTML-SERVICE-RUNTIME.md) and [ADR-009](docs/ADR-009-STANDALONE-WEB-APP-HOST.md).
 
 ## Known Limitations
 

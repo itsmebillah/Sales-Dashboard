@@ -2,13 +2,13 @@
   "timeZone": "Asia/Dhaka",
   "dependencies": {
   },
-  "executionApi": {
-    "access": "MYSELF"
-  },
   "webapp": {
     "access": "ANYONE_ANONYMOUS",
     "executeAs": "USER_DEPLOYING"
   },
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/spreadsheets"
+  ],
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8"
 }
