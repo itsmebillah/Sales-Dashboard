@@ -258,7 +258,7 @@ test('refreshes KPIs from the supplied certified Master Dataset without reparsin
   const original=SIP.DataEngine.get;
   SIP.DataEngine.get=()=>{throw new Error('Data Engine must not be called twice');};
   try {
-    const result=SIP.KpiService.refreshFromMaster({schemaVersion:'1.0.0',batchId:'ONE_PARSE',records:[],qualityFlags:[]},{config:{cache:{chunkChars:1000,maxChunks:100,ttlSeconds:60}}});
+    const result=SIP.KpiService.refreshFromMaster({schemaVersion:'1.0.0',batchId:'ONE_PARSE',records:[],qualityFlags:[],certification:{certified:true,status:'CERTIFIED'}},{config:{cache:{chunkChars:1000,maxChunks:100,ttlSeconds:60}}});
     equal(result.snapshot.batchId,'ONE_PARSE');
     equal(result.master.batchId,'ONE_PARSE');
   } finally { SIP.DataEngine.get=original; cache.clear(); }
@@ -273,7 +273,7 @@ test('publishes cache chunks in bounded transport batches', () => {
 
 test('publishes a compact certified dashboard cache for fresh-page hydration', () => {
   cache.clear();properties.clear();
-  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'DASHBOARD_CACHE',records:[],qualityFlags:[],dimensions:{}});
+  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'DASHBOARD_CACHE',records:[],qualityFlags:[],dimensions:{},certification:{certified:true,status:'CERTIFIED'}});
   const published=sandbox.publishDashboardApi(snapshot);
   ok(published.cache.durable.cached);
   const loaded=sandbox.getDashboardApi('dashboard');
@@ -353,6 +353,40 @@ test('enforces exact-number dashboard formatting and cache-only hydration', () =
   ok(!/BI\.boot[\s\S]{0,500}runDataEngine/.test(source),'dashboard boot must never start the Data Engine');
   ok(source.includes('id="mobileReport"'),'responsive report-card container is required');
   ok(source.includes('renderMobile(rows)'),'mobile report rows must render from live KPI data');
+});
+
+test('uses one official CLOSED_DAY_ONLY calendar without impossible working-day totals', () => {
+  const context={config:SIP.Config.get(),diagnostics:new SIP.Diagnostics(),ingestedAt:'2026-07-29T16:00:00Z'};
+  const parsed=[{sourceId:'SRC_SALES_MONTHLY',records:[],metadata:{period:{periodStart:'2026-07-01',periodEnd:'2026-07-31'},monthlyWorkingDays:26}}];
+  const calendar=SIP.BusinessCalendar.build(parsed,context);
+  equal(calendar.policy,'CLOSED_DAY_ONLY');
+  equal(calendar.current.monthLength,31);
+  equal(calendar.current.total,26);
+  equal(calendar.current.elapsed,24);
+  equal(calendar.current.remaining,2);
+  ok(calendar.current.elapsed+calendar.current.remaining===calendar.current.total);
+});
+
+test('documents the production sales control variance and keeps atomic daily facts authoritative', () => {
+  const diagnostics=new SIP.Diagnostics(),config=SIP.Config.get();
+  const records=[
+    {metric_id:'SALES_AMOUNT',numeric_value:51631145},
+    {metric_id:'SALES_MTD_AMOUNT',numeric_value:51631084}
+  ];
+  const result=SIP.ReconciliationEngine.calculate([{sourceId:'SRC_SALES_MONTHLY',records,metadata:{salesControlTotal:51631055}}],config,diagnostics);
+  equal(result.sales.variance,90);
+  equal(result.sales.status,'DOCUMENTED_VARIANCE');
+  ok(result.sales.accepted);
+  ok(diagnostics.issues.some(x=>x.code==='SALES_CONTROL_VARIANCE'&&x.severity==='WARN'));
+});
+
+test('blocks certification and cache publication for failed batches', () => {
+  const diagnostics=new SIP.Diagnostics();diagnostics.issue('ERROR','P0_TEST','failed batch');
+  const master={batchId:'FAILED',calendar:{verified:true},reconciliation:{sales:{accepted:true}}};
+  const gate=SIP.CertificationEngine.assess(master,diagnostics,{verified:true});
+  equal(gate.status,'NOT_CERTIFIED');
+  let blocked=false;try{sandbox.publishDashboardApi({quality:{certification:'NOT_CERTIFIED'}});}catch(_){blocked=true;}
+  ok(blocked,'uncertified dashboard publication must be blocked');
 });
 
 process.on('exit', () => {

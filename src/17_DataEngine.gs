@@ -15,14 +15,19 @@ SIP.DataEngine = (function () {
       var spreadsheet = options.spreadsheet || openSpreadsheet(config);
       var sources = SIP.SourceReader.readAll(spreadsheet, config, diagnostics);
       var parsed = SIP.ParserEngine.parseAll(sources, context);
-      var validation = SIP.ValidationEngine.validate(parsed, context);
       var relationships = SIP.RelationshipEngine.build(parsed, diagnostics);
-      var master = SIP.MasterDatasetBuilder.build(validation, relationships, parsed, context);
-      var cacheResult = options.skipCache ? { cached: false, reason: 'SKIPPED' } : SIP.CacheEngine.put(master, config, diagnostics);
+      var validation = SIP.ValidationEngine.validate(parsed, context);
+      var calendar = SIP.BusinessCalendar.build(parsed,context);
+      var master = SIP.MasterDatasetBuilder.build(validation, relationships, parsed, context,calendar);
+      master.reconciliation=SIP.ReconciliationEngine.calculate(parsed,config,diagnostics);
+      var persistence=SIP.PersistenceEngine.persist(spreadsheet,master,config);
+      master.persistence=persistence;
+      master.certification=SIP.CertificationEngine.assess(master,diagnostics,persistence);
+      var cacheResult = options.skipCache||!master.certification.certified ? { cached: false, reason: options.skipCache?'SKIPPED':'NOT_CERTIFIED' } : SIP.CacheEngine.put(master, config, diagnostics);
       var finalDiagnostics = diagnostics.finish();
       master.diagnostics = finalDiagnostics;
       if (options.writeDiagnostics !== false) SIP.DiagnosticsWriter.write(spreadsheet, context, finalDiagnostics, cacheResult);
-      return { master: master, diagnostics: finalDiagnostics, cache: cacheResult };
+      return { master: master, diagnostics: finalDiagnostics, cache: cacheResult, persistence:persistence, certification:master.certification };
     } catch (error) {
       diagnostics.issue('ERROR', 'ENGINE_FATAL', error.message, { stack: error.stack || '' });
       throw error;

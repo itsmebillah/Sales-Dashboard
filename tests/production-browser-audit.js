@@ -27,6 +27,14 @@ async function main() {
   }
   if (!appFrame) throw new Error(`Apps Script application frame did not load. Frames: ${page.frames().map(frame => frame.url()).join(', ')}`);
 
+  let maintenanceTrigger = null;
+  if (process.env.INSTALL_MAINTENANCE_TRIGGER === 'true') {
+    maintenanceTrigger = await appFrame.evaluate(() => new Promise((resolve, reject) => {
+      const timer=setTimeout(()=>reject(new Error('Maintenance trigger installation timed out')),30000);
+      google.script.run.withSuccessHandler(value=>{clearTimeout(timer);resolve(value);}).withFailureHandler(error=>{clearTimeout(timer);reject(error);}).installDailyMaintenanceTrigger();
+    }));
+  }
+
   if (process.env.TRIGGER_REFRESH === 'true') {
     var refreshStarted = Date.now();
     await appFrame.locator('#refreshButton').click();
@@ -52,8 +60,9 @@ async function main() {
 
   const read = selector => appFrame.locator(selector).first().textContent().catch(() => null);
   const cacheProbeStarted = Date.now();
-  const cacheHealth = await appFrame.evaluate(() => new Promise((resolve, reject) => {
-    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getDashboardApi('health');
+  const cacheHealth = process.env.SKIP_CACHE_PROBE === 'true' ? null : await appFrame.evaluate(() => new Promise((resolve, reject) => {
+    const timer=setTimeout(()=>reject(new Error('Cache health RPC timed out')),30000);
+    google.script.run.withSuccessHandler(value=>{clearTimeout(timer);resolve(value);}).withFailureHandler(error=>{clearTimeout(timer);reject(error);}).getDashboardApi('health');
   }));
   const cacheProbeWallMs = Date.now() - cacheProbeStarted;
   const renderTimings = await appFrame.evaluate(() => {
@@ -154,6 +163,7 @@ async function main() {
     viewportWidth: await appFrame.evaluate(() => innerWidth),
     interaction,
     filterAudit,
+    maintenanceTrigger,
     consoleErrors,
     pageErrors
   };

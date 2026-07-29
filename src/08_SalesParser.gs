@@ -24,7 +24,10 @@ SIP.SalesParser = (function () {
       var sourceEmployeeId = C.value(row, header.columns, ['ID', 'PF_NO']);
       var srName = C.value(row, header.columns, ['SR']);
       var employee = N.employee(sourceEmployeeId, srName, 'SR');
-      if (!employee.id) { diag.issue('ERROR', 'SALES_EMPLOYEE_KEY_MISSING', 'SR row has no employee key', { row: r + 1 }); ignored++; continue; }
+      if (!employee.id) {
+        if (isPresentationRow(row,header,days,productMeta,context)) { ignored++; continue; }
+        diag.issue('ERROR', 'SALES_EMPLOYEE_KEY_MISSING', 'SR row has business values but no employee key', { row: r + 1 }); ignored++; continue;
+      }
       var dealer = N.dealer(C.value(row, header.columns, ['AREA_POINT', 'AREA_POINT_']), C.value(row, header.columns, ['DEALER_SL']));
       dimensions.employees[employee.id] = employee; if (dealer.id) dimensions.dealers[dealer.id] = dealer;
       var base = baseRecord(context, source, row, r, period, employee, dealer, header.columns);
@@ -57,7 +60,7 @@ SIP.SalesParser = (function () {
       loaded++;
     }
     var s = diag.source(id); s.rowsLoaded = loaded; s.rowsIgnored = ignored; s.recordsEmitted = records.length; s.executionMs += Date.now() - started;
-    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, dailyColumns: days, productColumns: productMeta } };
+    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, dailyColumns: days, productColumns: productMeta, monthlyWorkingDays: monthlyWorkingDays(rows, header.rowIndex), salesControlTotal:controlTotal(rows) } };
   }
 
   function baseRecord(context, source, row, rowIndex, period, employee, dealer, columns) {
@@ -113,6 +116,24 @@ SIP.SalesParser = (function () {
       if (lastName && U.text(packs[i])) out.push({ index: i, name: lastName, pack: U.text(packs[i]), group: lastGroup });
     }
     return out;
+  }
+
+  function isPresentationRow(row,header,days,products,context) {
+    var indexes=days.map(function(x){return x.index;}).concat(products.map(function(x){return x.index;}));
+    ['SALES_OF_','MONTHLY_TGT_PRODUCT_WISE_VALUE','NO_OF_ORDER'].forEach(function(alias){var index=alias.slice(-1)==='_'?findPrefix(header.keys,alias):H.find(header.columns,[alias]);if(index>=0)indexes.push(index);});
+    return !indexes.some(function(index){var value=U.number(row[index],context.config.parser.blankTokens);return value!==null&&value!==0;});
+  }
+  function monthlyWorkingDays(rows, headerIndex) {
+    for(var r=0;r<headerIndex;r++)for(var c=0;c<(rows[r]||[]).length;c++){
+      if(U.canonicalText(rows[r][c]).indexOf('MONTHLY_WD')>=0){
+        for(var n=c+1;n<Math.min(c+4,rows[r].length);n++){var value=U.number(rows[r][n],[]);if(value!==null&&value>0&&value<=31)return value;}
+      }
+    }
+    return null;
+  }
+  function controlTotal(rows) {
+    var value=rows[1]&&U.number(rows[1][13],[]);
+    return value!==null?value:null;
   }
 
   function empty(id) { return { sourceId: id, records: [], dimensions: { employees: {}, dealers: {}, products: {} }, metadata: {} }; }

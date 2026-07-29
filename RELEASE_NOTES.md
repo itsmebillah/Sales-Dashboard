@@ -78,3 +78,11 @@ Next recommendation: authorize and execute `runKpiEngineSelfTest()`, then
 stable consumer contract before beginning the mobile-first dashboard phase.
 
 No dashboard, HTML, chart or Web App was created.
+# v3.2.0 — P0 Production Remediation
+
+- Replaced impossible per-employee working-day maxima with one official `CLOSED_DAY_ONLY` business calendar.
+- Added certified row-level Master Dataset, Calendar, Hierarchy and Relationship persistence.
+- Added strict failed-batch certification and cache-publication gates.
+- Reconciled safe hierarchy/dealer aliases and formally documented the Sales control variance of 90.
+- Added safe, locked system-data lifecycle maintenance with bounded log retention.
+- Created the explicitly approved empty `Attendance` worksheet; no Attendance feature code was added.

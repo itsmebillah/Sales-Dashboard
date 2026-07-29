@@ -1,5 +1,5 @@
 SIP.MasterDatasetBuilder = (function () {
-  function build(validation, relationships, parsed, context) {
+  function build(validation, relationships, parsed, context, calendar) {
     var records = validation.records;
     var byMetric = {}, byEntity = {}, qualityFlags = [];
     records.forEach(function (r) {
@@ -22,11 +22,12 @@ SIP.MasterDatasetBuilder = (function () {
       dimensions: relationships.dimensions,
       hierarchy: relationships.hierarchy,
       relationships: relationships.relationships,
+      calendar: calendar,
       indexes: { byMetric: byMetric, byEntity: byEntity },
       forecast: { status: 'PLACEHOLDER', versions: [] },
       attendance: { status: 'NOT_IMPLEMENTED', compatibleSchemaVersion: SIP.SCHEMA_VERSION },
       qualityFlags: qualityFlags,
-      metadata: { parserMetadata: parsed.map(function (p) { return { sourceId: p.sourceId, metadata: p.metadata }; }), dealerCoverage: matchStats }
+      metadata: { parserMetadata: parsed.map(function (p) { return { sourceId: p.sourceId, metadata: p.metadata }; }), dealerCoverage: matchStats, hierarchyReconciliation:relationships.reconciliation||{} }
     };
   }
 

@@ -3,7 +3,7 @@ SIP.KpiEngine = (function () {
 
   function calculate(master, options) {
     options = options || {}; var started=Date.now(), aggregated=A.aggregate(master), contracts={};
-    Object.keys(aggregated.entities).forEach(function(key){contracts[key]=finalize(aggregated.entities[key]);});
+    Object.keys(aggregated.entities).forEach(function(key){contracts[key]=finalize(aggregated.entities[key],master.calendar);});
     enrichRanksAndContribution(contracts);
     var risks=SIP.RiskEngine.evaluate(contracts,options);
     var generatedAt=SIP.Utils.nowIso(); risks.forEach(function(r){r.generatedAt=generatedAt;});
@@ -25,17 +25,17 @@ SIP.KpiEngine = (function () {
       risks:risks,
       insights:risks.map(toInsight),
       quality:{ acceptedRecords:aggregated.acceptedRecords, excludedRecords:aggregated.excludedRecords,
-        masterQualityFlags:(master.qualityFlags||[]).length, certification:aggregated.excludedRecords===0?'CERTIFIED_INPUT':'PARTIAL_INPUT' },
+        masterQualityFlags:(master.qualityFlags||[]).length, certification:master.certification&&master.certification.certified?'CERTIFIED':'NOT_CERTIFIED', certificationGate:master.certification||null },
       performance:{ recordsVisited:(master.records||[]).length, entityContracts:Object.keys(contracts).length, calculationMs:Date.now()-started }
     };
     return snapshot;
   }
 
-  function finalize(state) {
+  function finalize(state,calendar) {
     var sum=state.sums,max=state.maxima;
     var sales=sum.SALES_AMOUNT||0,target=sum.TARGET_AMOUNT||0,collection=sum.COLLECTION_AMOUNT||0;
-    var current=max.WORKING_DAYS_ELAPSED || Object.keys(state.daily.SALES_AMOUNT||{}).length;
-    var due=max.DUE_WORKING_DAYS||0,total=max.TOTAL_WORKING_DAYS||(current+due);
+    var current=calendar&&calendar.current?calendar.current.elapsed:0;
+    var due=calendar&&calendar.current?calendar.current.remaining:0,total=calendar&&calendar.current?calendar.current.total:0;
     var forecast=SIP.ForecastBaseEngine.calculate(state,{sales:sales,currentWorkingDay:current,totalWorkingDay:total});
     var historical=state.periods.HISTORICAL_SALES_AMOUNT||{}, periods=Object.keys(historical).sort();
     var prior=periods.length?historical[periods[periods.length-1]]:null;
@@ -83,6 +83,6 @@ SIP.KpiEngine = (function () {
     return labels;
   }
   function ratio(a,b){return a===null||a===undefined||b===null||b===undefined||b===0?null:a/b;}
-  function emptyCompany(){return finalize({entityType:'COMPANY',entityId:'COMPANY:DEFAULT',sums:{},maxima:{},latest:{},periods:{},daily:{},sets:{dealers:{},srs:{},tsos:{},rsms:{},products:{}},recordCount:0});}
+  function emptyCompany(){return finalize({entityType:'COMPANY',entityId:'COMPANY:DEFAULT',sums:{},maxima:{},latest:{},periods:{},daily:{},sets:{dealers:{},srs:{},tsos:{},rsms:{},products:{}},recordCount:0},null);}
   return { calculate:calculate };
 }());

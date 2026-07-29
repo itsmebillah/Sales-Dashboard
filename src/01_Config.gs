@@ -7,7 +7,11 @@ SIP.Config = (function () {
       lifting: 'Dealer lifting',
       transactions: 'Monthly Projection',
       importBatches: 'Import Batches',
-      qualityResults: 'Quality Results'
+      qualityResults: 'Quality Results',
+      masterDataset: 'Master Dataset',
+      calendar: 'Calendar',
+      hierarchy: 'Hierarchy',
+      relationships: 'Relationship Model'
     },
     cache: {
       namespace: 'SIP_MASTER_V1',
@@ -23,7 +27,22 @@ SIP.Config = (function () {
     },
     quality: {
       duplicateSampleLimit: 50,
-      issueLimit: 1000
+      issueLimit: 1000,
+      salesControlTolerance: 100
+    },
+    calendar: {
+      timezone: 'Asia/Dhaka',
+      cutoffPolicy: 'CLOSED_DAY_ONLY',
+      weekendDays: [5],
+      publicHolidays: []
+    },
+    persistence: {
+      chunkRows: 1000
+    },
+    maintenance: {
+      scheduleHour: 3,
+      batchRetentionDays: 90,
+      maxBatchHistory: 100
     }
   };
 

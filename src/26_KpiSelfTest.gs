@@ -8,7 +8,7 @@ function runKpiEngineSelfTest(){
   add('LIFTING_AMOUNT',250,'2026-07-02',{moduleId:'LIFTING'});add('STOCK_AMOUNT',50,'',{moduleId:'LIFTING',recordType:'SNAPSHOT',asOfAt:'2026-07-02'});
   add('PRODUCT_QUANTITY',10,'',{productId:'P1',quantity:10,numericValue:10,amount:null});
   add('HISTORICAL_SALES_AMOUNT',250,'2026-06-30',{periodStart:'2026-06-01',periodEnd:'2026-06-30'});
-  var snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'SELF',records:records,qualityFlags:[]});
+  var snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'SELF',records:records,qualityFlags:[],calendar:{current:{elapsed:2,remaining:2,total:4}},certification:{certified:true,status:'CERTIFIED'}});
   var e=snapshot.executive,checks=[
     ['total sales',e.sales===300],['target',e.target===600],['achievement',e.achievementPct===0.5],['gap',e.gap===300],
     ['average daily sales',e.averageDailySales===150],['forecast',e.forecast===600],['collection',e.collection===150],

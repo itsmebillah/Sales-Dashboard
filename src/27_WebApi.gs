@@ -10,6 +10,7 @@ function getDashboardApi(view) {
     var config=dashboardCacheConfig(),diagnostics=new SIP.Diagnostics();
     var snapshot = SIP.CacheEngine.get(config,diagnostics) || SIP.DurableCache.get();
     if (!snapshot) return { ok:false, error:{ code:'KPI_CACHE_EMPTY', message:'Certified KPI cache is empty. Run refresh to publish the dashboard.' }, responseMs:Date.now()-started };
+    if(!snapshot.quality||snapshot.quality.certification!=='CERTIFIED')return {ok:false,error:{code:'KPI_CACHE_NOT_CERTIFIED',message:'No successfully certified KPI cache is available.'},responseMs:Date.now()-started};
     if(!SIP.CacheEngine.get(config,new SIP.Diagnostics()))SIP.CacheEngine.put(snapshot,config,new SIP.Diagnostics());
     if (view === 'health') {
       return { ok:true, data:{
@@ -30,6 +31,7 @@ function dashboardCacheConfig() {
 
 /** Publish and verify the compact certified consumer projection. */
 function publishDashboardApi(snapshot) {
+  if(!snapshot||!snapshot.quality||snapshot.quality.certification!=='CERTIFIED')throw new Error('Only a successfully certified KPI snapshot may be published');
   var data=dashboardPayload(snapshot).data,diagnostics=new SIP.Diagnostics(),config=dashboardCacheConfig();
   var durable=SIP.DurableCache.put(data);
   if(!durable.cached)throw new Error('Certified durable dashboard cache publication failed: '+durable.reason+' ('+(durable.chunks||0)+' chunks)');

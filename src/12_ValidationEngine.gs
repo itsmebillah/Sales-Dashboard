@@ -48,10 +48,11 @@ SIP.ValidationEngine = (function () {
     var parentByChild = {};
     parsed.forEach(function (result) {
       (result.records || []).forEach(function (r) {
+        if (r.metric_id !== 'SALES_AMOUNT' && r.metric_id !== 'COLLECTION_AMOUNT' && r.metric_id !== 'PROJECTION_AMOUNT' && r.metric_id !== 'LIFTING_AMOUNT') return;
         [['sr_id','tso_id'],['tso_id','rsm_id'],['rsm_id','asm_id']].forEach(function (pair) {
           var child = r[pair[0]], parent = r[pair[1]]; if (!child || !parent) return;
           var key = pair[0] + ':' + child;
-          if (parentByChild[key] && parentByChild[key] !== parent) context.diagnostics.issue('WARN', 'AMBIGUOUS_HIERARCHY', 'Entity has multiple parents in the same snapshot', { child: child, parents: [parentByChild[key], parent] });
+          if (parentByChild[key] && parentByChild[key] !== parent) context.diagnostics.issue('ERROR', 'AMBIGUOUS_HIERARCHY', 'Entity has multiple parents in the same effective period', { child: child, parents: [parentByChild[key], parent], period:r.period_start||r.event_date });
           else parentByChild[key] = parent;
         });
       });

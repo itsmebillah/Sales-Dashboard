@@ -16,6 +16,7 @@ function refreshDashboardData() {
   var started=Date.now();
   try {
     var masterResult=runDataEngine();
+    if(!masterResult.certification||!masterResult.certification.certified)throw new Error('Data Engine batch did not pass certification');
     var kpiResult=refreshKpiSnapshot(masterResult.master);
     var dashboardResult=publishDashboardApi(kpiResult.snapshot),response={ok:true,data:dashboardResult.data};
     response.refresh={ok:true,durationMs:Date.now()-started,masterCache:masterResult.cache,kpiCache:kpiResult.cache,dashboardCache:dashboardResult.cache};

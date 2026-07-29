@@ -21,7 +21,7 @@ SIP.KpiService = (function () {
     return snapshot?{snapshot:snapshot,cache:{hit:true},diagnostics:diagnostics.finish()}:{snapshot:null,cache:{hit:false},diagnostics:diagnostics.finish()};
   }
   function refreshFromMaster(master,options) {
-    if(!master||!master.batchId)throw new Error('A certified Master Dataset is required');
+    if(!master||!master.batchId||!master.certification||!master.certification.certified)throw new Error('A certified Master Dataset is required');
     options=options||{};var diagnostics=new SIP.Diagnostics(),snapshot=SIP.KpiEngine.calculate(master,options);
     var cacheResult=SIP.CacheEngine.put(snapshot,config(options.config),diagnostics);
     return{snapshot:snapshot,cache:cacheResult,diagnostics:diagnostics.finish(),master:{batchId:master.batchId}};
