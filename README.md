@@ -9,7 +9,7 @@ Governed sales analytics from heterogeneous Google Sheets data to a secure execu
 [![Tests](https://img.shields.io/badge/tests-17%20passing-15803d?style=flat-square)](tests/run-tests.js)
 [![Platform](https://img.shields.io/badge/platform-Apps%20Script%20HTML%20Service-111827?style=flat-square)](#technology-stack)
 
-[Live Dashboard](https://script.google.com/macros/s/AKfycbzVTrLrzzR_KVlPxodSrbZ6fi005igUX-YvM-kMVDdA4q8Nq6kzhoXkE0EEy4WQSmwXJA/exec) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Release Notes](RELEASE_NOTES.md)
+[Live Dashboard](https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Release Notes](RELEASE_NOTES.md)
 
 ## Overview
 
@@ -122,4 +122,4 @@ No open-source license is currently declared. The source is publicly visible, bu
 
 **Md. Masum Billah** | Data Analyst, Automation Developer, and Business Intelligence Specialist
 
-[Portfolio](https://itsmebillah.github.io/) | [GitHub](https://github.com/itsmebillah) | [Email](mailto:itsmbillah@gmail.com) | [Live Demo](https://script.google.com/macros/s/AKfycbzVTrLrzzR_KVlPxodSrbZ6fi005igUX-YvM-kMVDdA4q8Nq6kzhoXkE0EEy4WQSmwXJA/exec) | [Documentation](CORE_PLATFORM_ARCHITECTURE.md) | [Related: Company Hub](https://github.com/itsmebillah/company-hub)
+[Portfolio](https://itsmebillah.github.io/) | [GitHub](https://github.com/itsmebillah) | [Production owner](mailto:ptcoffice20@gmail.com) | [Live Demo](https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec) | [Documentation](CORE_PLATFORM_ARCHITECTURE.md)

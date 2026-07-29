@@ -1,6 +1,6 @@
 /**
- * Owner-authenticated Execution API contract for independent server consumers.
- * It is not a web app and cannot be called anonymously.
+ * Cache-only dashboard contract shared by HTML Service browser functions.
+ * It never opens the spreadsheet or starts a data build.
  */
 function getDashboardApi(view) {
   var started = Date.now();

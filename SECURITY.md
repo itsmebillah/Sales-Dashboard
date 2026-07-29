@@ -12,7 +12,7 @@ The complete deployment and credential model is documented in [docs/PHASE5_SECUR
 
 ## Reporting a Vulnerability
 
-Do not open a public issue containing exploit details or secrets. Report suspected vulnerabilities privately to [itsmbillah@gmail.com](mailto:itsmbillah@gmail.com) with reproduction steps, affected components, and impact. Credentials included in a report should be revoked immediately.
+Do not open a public issue containing exploit details or secrets. Report suspected vulnerabilities privately to the production owner at [ptcoffice20@gmail.com](mailto:ptcoffice20@gmail.com) with reproduction steps, affected components, and impact. Credentials included in a report should be revoked immediately.
 
 ## Supported Version
 
