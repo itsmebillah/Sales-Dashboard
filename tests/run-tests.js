@@ -368,6 +368,7 @@ test('enforces exact-number dashboard formatting and cache-only hydration', () =
   ok(!/BI\.boot[\s\S]{0,500}runDataEngine/.test(source),'dashboard boot must never start the Data Engine');
   ok(source.includes('id="mobileReport"'),'responsive report-card container is required');
   ok(source.includes('renderMobile(rows)'),'mobile report rows must render from live KPI data');
+  ok(source.includes("saved==='dark'?'dark':'light'"),'light mode must be the default application theme');
 });
 
 test('uses CLOSED_DAY_ONLY with the approved three-day posting maturity lag', () => {
