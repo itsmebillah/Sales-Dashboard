@@ -5,6 +5,7 @@ SIP.ForecastBaseEngine = (function () {
     var runRate = ads !== null && total > 0 ? ads * total : null;
     var momentum = seriesMomentum(state.daily.SALES_AMOUNT || {});
     var historical = historicalTrend(state.periods.HISTORICAL_SALES_AMOUNT || {});
+    var priorDaily=state.daily.HISTORICAL_DAILY_SALES_AMOUNT||{},priorKeys=workingKeys(priorDaily,inputs.calendar),priorComparable=sumKeys(priorDaily,priorKeys.slice(0,elapsed)),priorTotal=sumKeys(priorDaily,priorKeys);
     var volatility = coefficientOfVariation(valuesByDate(state.daily.SALES_AMOUNT || {}));
     var elapsedRatio = total > 0 ? elapsed / total : null;
     var confidenceScore = confidence({ elapsedRatio:elapsedRatio, volatility:volatility, historyPoints:historical.points, activeDays:activeDays(state.daily.SALES_AMOUNT || {}) });
@@ -14,6 +15,9 @@ SIP.ForecastBaseEngine = (function () {
       workingDayForecast: runRate,
       momentum: momentum,
       historicalTrend: historical,
+      previousMonthComparableSales:priorComparable,
+      previousMonthTotalSales:priorTotal,
+      previousMonthAlignedDays:Math.min(elapsed,priorKeys.length),
       confidenceInputs: {
         elapsedWorkingDayRatio: elapsedRatio,
         dailyVolatility: volatility,
@@ -54,6 +58,8 @@ SIP.ForecastBaseEngine = (function () {
   function valuesByDate(series) { return Object.keys(series).sort().map(function(k){return series[k];}); }
   function activeDays(series) { return Object.keys(series).filter(function(k){return series[k] > 0;}).length; }
   function average(values) { return values.length ? values.reduce(function(a,b){return a+b;},0)/values.length : null; }
+  function workingKeys(series,calendar){var rows=calendar&&calendar.rows||[],working={};rows.forEach(function(r){if(r.isWorkingDay)working[r.date]=true;});return Object.keys(series).filter(function(k){return !rows.length||working[k];}).sort();}
+  function sumKeys(series,keys){return keys.reduce(function(n,k){return n+(Number(series[k])||0);},0);}
   function round(v,p){var f=Math.pow(10,p);return Math.round(v*f)/f;}
   return { calculate:calculate, seriesMomentum:seriesMomentum, historicalTrend:historicalTrend, coefficientOfVariation:coefficientOfVariation };
 }());

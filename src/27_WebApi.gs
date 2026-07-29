@@ -46,7 +46,7 @@ function dashboardPayload(snapshot) {
   return { ok:true, data:{
     release:SIP.VERSION, kpiVersion:snapshot.kpiVersion, masterSchemaVersion:snapshot.masterSchemaVersion,
     batchId:snapshot.batchId, generatedAt:snapshot.generatedAt,
-    executive:snapshot.executive, labels:snapshot.labels||{}, hierarchy:snapshot.hierarchy,
+    executive:snapshot.executive, labels:snapshot.labels||{}, hierarchy:snapshot.hierarchy,periods:snapshot.periods||[],
     dealers:{top:snapshot.dealers.top},
     products:{topProducts:snapshot.products.topProducts,unitPolicy:snapshot.products.unitPolicy},
     collection:{total:snapshot.collection.total,ratio:snapshot.collection.ratio,trendPct:snapshot.collection.trendPct,coveragePct:snapshot.collection.coveragePct},

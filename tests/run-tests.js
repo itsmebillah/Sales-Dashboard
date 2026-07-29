@@ -295,7 +295,7 @@ test('uses the approved spreadsheet for the durable certified cache', () => {
   ok(source.includes('SpreadsheetApp.flush()'));
 });
 
-test('ingests the previous-month report as history only without duplicating sales', () => {
+test('preserves previous-month daily facts without duplicating current Sales', () => {
   const rows=salesFixture().map(row=>row.slice());
   rows[0][0]="June'26";
   rows[3][16]='Sales >May,26';
@@ -303,8 +303,23 @@ test('ingests the previous-month report as history only without duplicating sale
   const context={config,diagnostics,batchId:'HISTORY',ingestedAt:'2026-07-29T00:00:00Z'};
   const parsed=SIP.HistoricalSalesParser.parse({definition:{id:'SRC_SALES_PREVIOUS',name:'Previous Month Sales'},values:rows},context);
   ok(parsed.records.length>0);
-  ok(parsed.records.every(record=>record.metric_id==='HISTORICAL_SALES_AMOUNT'));
-  ok(parsed.records.every(record=>record.period_start==='2026-05-01'));
+  ok(parsed.records.some(record=>record.metric_id==='HISTORICAL_DAILY_SALES_AMOUNT'&&record.period_start==='2026-06-01'));
+  ok(parsed.records.some(record=>record.metric_id==='HISTORICAL_SALES_AMOUNT'&&record.period_start==='2026-05-01'));
+  ok(parsed.records.every(record=>record.metric_id!=='SALES_AMOUNT'));
+});
+
+test('scopes executive headcounts to current Sales facts',()=>{
+  const records=[
+    SIP.Normalizer.masterRecord({recordId:'S',moduleId:'SALES',metricId:'SALES_AMOUNT',numericValue:10,srId:'SR1',tsoId:'T1',rsmId:'R1',qualityStatus:'VALID'}),
+    SIP.Normalizer.masterRecord({recordId:'C',moduleId:'COLLECTION_PROJECTION',metricId:'COLLECTION_AMOUNT',numericValue:5,srId:'SR2',tsoId:'T2',rsmId:'R2',qualityStatus:'VALID'})
+  ];
+  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'COUNTS',records,qualityFlags:[]});
+  equal(snapshot.executive.srCount,1);equal(snapshot.executive.tsoCount,1);equal(snapshot.executive.rsmCount,1);
+});
+
+test('classifies Holiday as governed metadata in lifecycle inventory',()=>{
+  const source=fs.readFileSync(path.join(root,'src','29_MaintenanceEngine.gs'),'utf8');
+  ok(source.includes("'Holiday':'Metadata'"));
 });
 
 test('emits only statuses accepted by the Import Batches sheet contract', () => {

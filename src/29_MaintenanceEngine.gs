@@ -1,7 +1,7 @@
 SIP.MaintenanceEngine=(function(){
   var BUSINESS={'Sales Data Base Monthly':true,'Previous Month Sales':true,'Monthly Projection':true,'Dealer lifting':true,'Attendance':true};
   var CLASSIFICATION={
-    'Dashboard Cache':'Cache','Master Dataset':'Runtime','Master Lookup':'Metadata','Calendar':'Metadata','Configuration':'Metadata','Hierarchy':'Metadata','Relationship Model':'Metadata','Parser Contract':'Metadata','Metric Dictionary':'Metadata','Module Registry':'Metadata','Source Registry':'Metadata','Import Batches':'Log','Quality Rules':'Metadata','Quality Results':'Log','Metric Store':'Historical Cache','Action Register':'Recovery','Audit Log':'Log','Platform Guide':'Metadata'
+    'Dashboard Cache':'Cache','Master Dataset':'Runtime','Master Lookup':'Metadata','Calendar':'Metadata','Holiday':'Metadata','Configuration':'Metadata','Hierarchy':'Metadata','Relationship Model':'Metadata','Parser Contract':'Metadata','Metric Dictionary':'Metadata','Module Registry':'Metadata','Source Registry':'Metadata','Import Batches':'Log','Quality Rules':'Metadata','Quality Results':'Log','Metric Store':'Historical Cache','Action Register':'Recovery','Audit Log':'Log','Platform Guide':'Metadata'
   };
   function inventory(spreadsheet){return spreadsheet.getSheets().map(function(sheet){var name=sheet.getName();return{name:name,classification:BUSINESS[name]?'Business':(CLASSIFICATION[name]||'Unclassified'),rows:sheet.getLastRow(),columns:sheet.getLastColumn(),maxRows:sheet.getMaxRows(),maxColumns:sheet.getMaxColumns(),automaticCleanup:cleanupPolicy(name)};});}
   function cleanupPolicy(name){
@@ -45,5 +45,5 @@ function getSystemWorksheetInventory(){return SIP.MaintenanceEngine.inventory(Sp
 function installDailyMaintenanceTrigger(){
   var handler='runScheduledMaintenance',existing=ScriptApp.getProjectTriggers().filter(function(t){return t.getHandlerFunction()===handler;});
   if(!existing.length)ScriptApp.newTrigger(handler).timeBased().everyDays(1).atHour(SIP.Config.get().maintenance.scheduleHour).create();
-  return{installed:true,handler:handler,hour:SIP.Config.get().maintenance.scheduleHour,existingRemoved:0};
+  return{installed:true,handler:handler,hour:SIP.Config.get().maintenance.scheduleHour,triggerCount:ScriptApp.getProjectTriggers().filter(function(t){return t.getHandlerFunction()===handler;}).length,existingRemoved:0};
 }

@@ -9,7 +9,8 @@ SIP.DurableCache = (function () {
     var json=JSON.stringify(value),payload=encode(json),chunks=[];
     for(var i=0;i<payload.length;i+=CHUNK_CHARS)chunks.push(payload.slice(i,i+CHUNK_CHARS));
     if(chunks.length>MAX_CHUNKS)return{cached:false,reason:'DURABLE_CAPACITY',chunks:chunks.length,maxChunks:MAX_CHUNKS};
-    var sheet=cacheSheet(true),generation=SIP.Utils.hash([value.batchId,value.generatedAt,json.length]).slice(0,16),start=Math.max(2,sheet.getLastRow()+1);
+    var sheet=cacheSheet(true),generation=SIP.Utils.hash([value.batchId,value.generatedAt,json.length]).slice(0,16),old=Math.max(0,sheet.getLastRow()-1),start=2;
+    if(old)sheet.getRange(2,1,old,3).clearContent();
     var rows=chunks.map(function(chunk,index){return[generation,index,chunk];});
     sheet.getRange(start,1,rows.length,3).setValues(rows);
     var meta={schema:SCHEMA,generation:generation,chunks:chunks.length,hash:SIP.Utils.hash(json),generatedAt:value.generatedAt,batchId:value.batchId};
@@ -22,7 +23,7 @@ SIP.DurableCache = (function () {
   function get(){
     var sheet=cacheSheet(false);if(!sheet||sheet.getLastRow()<2)return null;
     var meta=parse(sheet.getRange(1,2).getValue());if(!meta||meta.schema!==SCHEMA)return null;
-    var values=sheet.getRange(2,1,sheet.getLastRow()-1,3).getValues(),chunks=[];
+    var values=sheet.getRange(2,1,meta.chunks,3).getValues(),chunks=[];
     values.forEach(function(row){if(row[0]===meta.generation)chunks[Number(row[1])]=String(row[2]||'');});
     if(chunks.length!==meta.chunks||chunks.some(function(chunk){return !chunk;}))return null;
     try{var json=decode(chunks.join(''));if(SIP.Utils.hash(json)!==meta.hash)return null;return JSON.parse(json);}catch(error){return null;}

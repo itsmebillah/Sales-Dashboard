@@ -14,7 +14,7 @@ SIP.KpiAccumulator = (function () {
   function entityRefs(r) {
     var refs = [{ type: 'COMPANY', id: r.company_id || 'COMPANY:DEFAULT' }];
     [['RSM',r.rsm_id],['TSO',r.tso_id],['SR',r.sr_id || (r.module_id === 'SALES' ? r.employee_id : '')],
-      ['DEALER',r.dealer_id],['PRODUCT',r.product_id]].forEach(function (x) { if (x[1]) refs.push({ type:x[0], id:x[1] }); });
+      ['DEALER',r.dealer_id],['PRODUCT',r.product_id],['CATEGORY',r.product_group_id]].forEach(function (x) { if (x[1]) refs.push({ type:x[0], id:x[1] }); });
     var seen = {}; return refs.filter(function (x) { var k=x.type+'|'+x.id; if(seen[k])return false; seen[k]=true; return true; });
   }
 
@@ -29,8 +29,8 @@ SIP.KpiAccumulator = (function () {
 
   function apply(state, r) {
     state.recordCount++;
-    addSet(state.sets.dealers, r.dealer_id); addSet(state.sets.srs, r.sr_id); addSet(state.sets.tsos, r.tso_id);
-    addSet(state.sets.rsms, r.rsm_id); addSet(state.sets.products, r.product_id);
+    if(r.metric_id==='SALES_AMOUNT'){addSet(state.sets.dealers,r.dealer_id);addSet(state.sets.srs,r.sr_id);addSet(state.sets.tsos,r.tso_id);addSet(state.sets.rsms,r.rsm_id);}
+    if(r.metric_id==='PRODUCT_QUANTITY')addSet(state.sets.products,r.product_id);
     if (r.metric_id === 'COLLECTION_AMOUNT') addSet(state.sets.collectingDealers, r.dealer_id);
     if (r.metric_id === 'PROJECTION_AMOUNT') addSet(state.sets.projectingDealers, r.dealer_id);
     var value = numeric(r); if (value === null) return;
@@ -46,7 +46,7 @@ SIP.KpiAccumulator = (function () {
       var timestamp = r.as_of_at || r.observed_at || r.event_date || r.ingested_at || '';
       if (!current || timestamp >= current.timestamp) state.latest[r.metric_id + '|' + entity] = { timestamp:timestamp, value:value };
     } else state.sums[r.metric_id] = (state.sums[r.metric_id] || 0) + value;
-    if (r.event_date && ['SALES_AMOUNT','LIFTING_AMOUNT','COLLECTION_AMOUNT','PROJECTION_AMOUNT'].indexOf(r.metric_id) >= 0) {
+    if (r.event_date && ['SALES_AMOUNT','HISTORICAL_DAILY_SALES_AMOUNT','LIFTING_AMOUNT','COLLECTION_AMOUNT','PROJECTION_AMOUNT'].indexOf(r.metric_id) >= 0) {
       state.daily[r.metric_id] = state.daily[r.metric_id] || {};
       state.daily[r.metric_id][r.event_date] = (state.daily[r.metric_id][r.event_date] || 0) + value;
     }
