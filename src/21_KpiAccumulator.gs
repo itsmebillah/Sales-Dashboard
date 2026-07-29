@@ -29,7 +29,7 @@ SIP.KpiAccumulator = (function () {
 
   function apply(state, r) {
     state.recordCount++;
-    if(r.metric_id==='SALES_AMOUNT'){addSet(state.sets.dealers,r.dealer_id);addSet(state.sets.srs,r.sr_id);addSet(state.sets.tsos,r.tso_id);addSet(state.sets.rsms,r.rsm_id);}
+    if(r.metric_id==='SALES_AMOUNT'||r.source_dataset==='Sales Data Base Monthly'){addSet(state.sets.dealers,r.dealer_id);addSet(state.sets.srs,r.sr_id);addSet(state.sets.tsos,r.tso_id);addSet(state.sets.rsms,r.rsm_id);}
     if(r.metric_id==='PRODUCT_QUANTITY')addSet(state.sets.products,r.product_id);
     if (r.metric_id === 'COLLECTION_AMOUNT') addSet(state.sets.collectingDealers, r.dealer_id);
     if (r.metric_id === 'PROJECTION_AMOUNT') addSet(state.sets.projectingDealers, r.dealer_id);
