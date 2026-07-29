@@ -5,6 +5,7 @@ SIP.DataEngine = (function () {
     var context = {
       config: config,
       diagnostics: diagnostics,
+      persistSalesActivityRecords: false,
       startedAt: Date.now(),
       ingestedAt: SIP.Utils.nowIso(),
       batchId: options.batchId || SIP.Utils.uniqueId('BATCH', [SIP.Utils.nowIso(), SIP.VERSION])
@@ -20,7 +21,7 @@ SIP.DataEngine = (function () {
       var calendarSettings=SIP.BusinessCalendar.loadSettings(spreadsheet,config);
       var calendar = SIP.BusinessCalendar.build(parsed,context,calendarSettings);
       var attendance=SIP.SalesActivityAttendance.resolve(validation,relationships,calendar,context,options.attendanceProvider);
-      validation.records=validation.records.concat(attendance.records);
+      if(attendance.records.length)validation.records=validation.records.concat(attendance.records);
       var master = SIP.MasterDatasetBuilder.build(validation, relationships, parsed, context,calendar);
       master.attendance={status:'ACTIVE',type:attendance.attendanceType,statusSource:attendance.statusSource,providerContract:attendance.providerContract,employeeCount:attendance.employeeCount,workingDays:attendance.workingDays,present:attendance.present,absent:attendance.absent,futureProviderContract:'HR_ATTENDANCE'};
       master.reconciliation=SIP.ReconciliationEngine.calculate(parsed,config,diagnostics);
