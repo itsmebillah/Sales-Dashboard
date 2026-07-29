@@ -2,7 +2,7 @@
 SIP.DurableCache = (function () {
   var SHEET='Dashboard Cache',SCHEMA='SIP_DASHBOARD_CACHE_V1',CHUNK_CHARS=30000,MAX_CHUNKS=60;
   function encode(json){return Utilities.gzip?Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(json,'application/json')).getBytes()):json;}
-  function decode(payload){return Utilities.ungzip?Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(payload))).getDataAsString():payload;}
+  function decode(payload){return Utilities.ungzip?Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(payload),'application/x-gzip')).getDataAsString():payload;}
   function spreadsheet(){return SpreadsheetApp.openById(SIP.Config.get().spreadsheetId);}
   function cacheSheet(create){var book=spreadsheet(),sheet=book.getSheetByName(SHEET);if(!sheet&&create){sheet=book.insertSheet(SHEET);sheet.hideSheet();}return sheet;}
   function put(value){
