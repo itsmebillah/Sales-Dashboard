@@ -11,6 +11,8 @@ SIP.ForecastBaseEngine = (function () {
     var confidenceScore = confidence({ elapsedRatio:elapsedRatio, volatility:volatility, historyPoints:historical.points, activeDays:activeDays(state.daily.SALES_AMOUNT || {}) });
     return {
       averageDailySales: ads,
+      maturedSales:sales,
+      dataCutoffDate:inputs.calendar&&inputs.calendar.current&&inputs.calendar.current.dataCutoffDate,
       runRate: runRate,
       workingDayForecast: runRate,
       momentum: momentum,

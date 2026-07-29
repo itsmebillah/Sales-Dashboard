@@ -39,7 +39,9 @@ SIP.Config = (function () {
       startYear: 2025,
       endYear: 2032,
       fiscalStartMonth: 7,
-      holidayApprovalStatus: 'APPROVED'
+      holidayApprovalStatus: 'APPROVED',
+      postingLagDays: 3,
+      monthCloseDay: 4
     },
     persistence: {
       chunkRows: 1000

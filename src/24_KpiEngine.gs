@@ -38,7 +38,8 @@ SIP.KpiEngine = (function () {
     var sales=sum.SALES_AMOUNT||0,target=sum.TARGET_AMOUNT||0,collection=sum.COLLECTION_AMOUNT||0;
     var current=calendar&&calendar.current?calendar.current.elapsed:0;
     var due=calendar&&calendar.current?calendar.current.remaining:0,total=calendar&&calendar.current?calendar.current.total:0;
-    var forecast=SIP.ForecastBaseEngine.calculate(state,{sales:sales,currentWorkingDay:current,totalWorkingDay:total,calendar:calendar});
+    var maturedSales=sumThrough(state.daily.SALES_AMOUNT||{},calendar&&calendar.current&&calendar.current.dataCutoffDate);
+    var forecast=SIP.ForecastBaseEngine.calculate(state,{sales:maturedSales,currentWorkingDay:current,totalWorkingDay:total,calendar:calendar});
     var historical=state.periods.HISTORICAL_SALES_AMOUNT||{}, periods=Object.keys(historical).sort();
     var prior=forecast.previousMonthComparableSales||null;
     var growthComparable=prior!==null&&prior!==0;
@@ -87,6 +88,7 @@ SIP.KpiEngine = (function () {
     return labels;
   }
   function ratio(a,b){return a===null||a===undefined||b===null||b===undefined||b===0?null:a/b;}
+  function sumThrough(series,cutoff){return Object.keys(series).filter(function(k){return !cutoff||k<=cutoff;}).reduce(function(n,k){return n+(Number(series[k])||0);},0);}
   function emptyCompany(){return finalize({entityType:'COMPANY',entityId:'COMPANY:DEFAULT',sums:{},maxima:{},latest:{},periods:{},daily:{},sets:{dealers:{},srs:{},tsos:{},rsms:{},products:{}},recordCount:0},null);}
   return { calculate:calculate };
 }());

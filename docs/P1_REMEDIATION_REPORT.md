@@ -21,3 +21,9 @@ P0 is closed. The daily 03:00 Asia/Dhaka maintenance trigger is installed. Its v
 ## Forecast integrity
 
 The approved working-day run-rate forecast formula is unchanged. Historical daily facts add comparable-period sales, aligned-day count and full prior-month context; they do not silently replace the approved model.
+
+## Three-day sales posting window
+
+A sale dated day D may be posted through D+3. Forecast inputs therefore use only matured sales dates at or before `as_of_date - 3 days`. Recent posted values remain visible in total Sales but are excluded from the run-rate numerator and elapsed-day denominator until their posting window closes. A calendar sales month becomes operationally closed on day 4 of the following month; transaction event dates and calendar-month ownership are not shifted.
+
+Configuration keys: `SALES_POSTING_LAG_DAYS = 3` and `MONTH_CLOSE_DAY = 4`. The Forecast panel discloses matured posted sales and the effective data-cutoff date.

@@ -4,7 +4,7 @@ SIP.SalesActivityAttendance=(function(){
     return (provider||derive)(validation,relationships,calendar,context);
   }
   function derive(validation,relationships,calendar,context){
-    var current=calendar.current||{},working=(calendar.rows||[]).filter(function(r){return r.periodStart===current.periodStart&&r.isWorkingDay&&r.date<calendar.asOfDate;}),employees={},activity={};
+    var current=calendar.current||{},cutoff=current.dataCutoffDate||calendar.dataCutoffDate||calendar.asOfDate,working=(calendar.rows||[]).filter(function(r){return r.periodStart===current.periodStart&&r.isWorkingDay&&r.date<=cutoff;}),employees={},activity={};
     (validation.records||[]).forEach(function(r){
       if(r.module_id==='SALES'&&r.sr_id)employees[r.sr_id]=true;
       if(r.metric_id==='SALES_AMOUNT'&&r.sr_id&&r.event_date&&r.quality_status==='VALID'&&Number(r.numeric_value)>0)activity[r.sr_id+'|'+r.event_date]=true;

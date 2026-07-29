@@ -370,15 +370,17 @@ test('enforces exact-number dashboard formatting and cache-only hydration', () =
   ok(source.includes('renderMobile(rows)'),'mobile report rows must render from live KPI data');
 });
 
-test('uses one official CLOSED_DAY_ONLY calendar without impossible working-day totals', () => {
+test('uses CLOSED_DAY_ONLY with the approved three-day posting maturity lag', () => {
   const context={config:SIP.Config.get(),diagnostics:new SIP.Diagnostics(),ingestedAt:'2026-07-29T16:00:00Z'};
   const parsed=[{sourceId:'SRC_SALES_MONTHLY',records:[],metadata:{period:{periodStart:'2026-07-01',periodEnd:'2026-07-31'},monthlyWorkingDays:26}}];
   const calendar=SIP.BusinessCalendar.build(parsed,context);
   equal(calendar.policy,'CLOSED_DAY_ONLY');
   equal(calendar.current.monthLength,31);
   equal(calendar.current.total,26);
-  equal(calendar.current.elapsed,24);
-  equal(calendar.current.remaining,2);
+  equal(calendar.current.dataCutoffDate,'2026-07-26');
+  equal(calendar.current.closeDate,'2026-08-04');
+  equal(calendar.current.elapsed,22);
+  equal(calendar.current.remaining,4);
   ok(calendar.current.elapsed+calendar.current.remaining===calendar.current.total);
 });
 
@@ -419,9 +421,9 @@ test('derives Sales Activity Attendance only for elapsed working days and remain
   equal(result.attendanceType,'SALES_ACTIVITY_NOT_HR');
   equal(result.hrAttendance,false);
   equal(result.employeeCount,2);
-  equal(result.workingDays,4);
+  equal(result.workingDays,2);
   equal(result.present,1);
-  equal(result.absent,7);
+  equal(result.absent,3);
   ok(result.records.every(x=>x.metric_id==='SALES_ACTIVITY_ATTENDANCE_STATUS'));
   ok(result.records.every(x=>x.event_date!=='2026-07-03'));
 });
