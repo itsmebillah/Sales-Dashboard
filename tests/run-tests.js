@@ -7,6 +7,7 @@ const crypto = require('crypto');
 
 const root = path.resolve(__dirname, '..');
 const cache = new Map();
+const properties = new Map();
 const sandbox = {
   console,
   Date,
@@ -32,6 +33,15 @@ const sandbox = {
       getAll: keys => Object.fromEntries(keys.filter(k => cache.has(k)).map(k => [k, cache.get(k)])),
       remove: k => cache.delete(k),
       removeAll: keys => keys.forEach(k => cache.delete(k))
+    })
+  },
+  PropertiesService: {
+    getScriptProperties: () => ({
+      setProperty: (key,value) => properties.set(key,String(value)),
+      getProperty: key => properties.has(key) ? properties.get(key) : null,
+      setProperties: entries => Object.entries(entries).forEach(([key,value])=>properties.set(key,String(value))),
+      getProperties: () => Object.fromEntries(properties),
+      deleteProperty: key => properties.delete(key)
     })
   },
   LockService: { getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} }) }
@@ -247,14 +257,25 @@ test('publishes cache chunks in bounded transport batches', () => {
 });
 
 test('publishes a compact certified dashboard cache for fresh-page hydration', () => {
-  cache.clear();
+  cache.clear();properties.clear();
   const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'DASHBOARD_CACHE',records:[],qualityFlags:[],dimensions:{}});
   const published=sandbox.publishDashboardApi(snapshot);
-  ok(published.cache.cached);
+  ok(published.cache.durable.cached);
   const loaded=sandbox.getDashboardApi('dashboard');
   ok(loaded.ok);
   equal(loaded.data.batchId,'DASHBOARD_CACHE');
+  cache.clear();properties.clear();
+});
+
+test('recovers certified dashboard data from durable cache after L1 eviction', () => {
+  cache.clear();properties.clear();
+  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'DURABLE_CACHE',records:[],qualityFlags:[],dimensions:{}});
+  const published=sandbox.publishDashboardApi(snapshot);
+  ok(published.cache.durable.cached);
   cache.clear();
+  const loaded=sandbox.getDashboardApi('dashboard');
+  ok(loaded.ok);equal(loaded.data.batchId,'DURABLE_CACHE');
+  properties.clear();cache.clear();
 });
 
 test('ingests the previous-month report as history only without duplicating sales', () => {

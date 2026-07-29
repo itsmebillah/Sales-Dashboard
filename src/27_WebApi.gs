@@ -7,8 +7,10 @@ function getDashboardApi(view) {
   try {
     view = view ? String(view) : 'dashboard';
     if (view !== 'dashboard' && view !== 'health') return { ok:false, error:{ code:'UNSUPPORTED_VIEW', message:'Supported views: dashboard, health' } };
-    var snapshot = SIP.CacheEngine.get(dashboardCacheConfig(), new SIP.Diagnostics());
+    var config=dashboardCacheConfig(),diagnostics=new SIP.Diagnostics();
+    var snapshot = SIP.CacheEngine.get(config,diagnostics) || SIP.DurableCache.get();
     if (!snapshot) return { ok:false, error:{ code:'KPI_CACHE_EMPTY', message:'Certified KPI cache is empty. Run refresh to publish the dashboard.' }, responseMs:Date.now()-started };
+    if(!SIP.CacheEngine.get(config,new SIP.Diagnostics()))SIP.CacheEngine.put(snapshot,config,new SIP.Diagnostics());
     if (view === 'health') {
       return { ok:true, data:{
         service:'sales-intelligence-platform', release:SIP.VERSION, kpiVersion:snapshot.kpiVersion,
@@ -29,11 +31,12 @@ function dashboardCacheConfig() {
 /** Publish and verify the compact certified consumer projection. */
 function publishDashboardApi(snapshot) {
   var data=dashboardPayload(snapshot).data,diagnostics=new SIP.Diagnostics(),config=dashboardCacheConfig();
-  var result=SIP.CacheEngine.put(data,config,diagnostics);
-  if(!result.cached)throw new Error('Certified dashboard cache publication failed: '+(result.reason||'CAPACITY')+' ('+(result.missing||0)+' missing of '+(result.chunks||0)+' chunks)');
-  var verified=SIP.CacheEngine.get(config,diagnostics);
-  if(!verified||verified.batchId!==data.batchId)throw new Error('Certified dashboard cache publication verification failed');
-  return{data:data,cache:result};
+  var durable=SIP.DurableCache.put(data);
+  if(!durable.cached)throw new Error('Certified durable dashboard cache publication failed: '+durable.reason+' ('+(durable.chunks||0)+' chunks)');
+  var levelOne=SIP.CacheEngine.put(data,config,diagnostics);
+  var verified=SIP.DurableCache.get();
+  if(!verified||verified.batchId!==data.batchId)throw new Error('Certified durable dashboard cache publication verification failed');
+  return{data:data,cache:{durable:durable,levelOne:levelOne}};
 }
 
 /** Compact, certified consumer projection. KPI calculations remain unchanged. */
