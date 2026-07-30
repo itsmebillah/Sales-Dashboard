@@ -50,4 +50,6 @@ The certified calculation pipeline, three-day sales-posting maturity rule, hiera
 
 ## Certification decision
 
-Application release 3.6.0 is approved for deployment subject to final production browser verification. Data/accounting certification remains governed separately and is not expanded by this presentation release.
+Application release 3.6.0 was deployed as Apps Script version 50 and passed final production browser verification. Data/accounting certification remains governed separately and is not expanded by this presentation release.
+
+Final evidence covered 1,440-pixel desktop, 768-pixel tablet, and 390-pixel mobile viewports. Every run loaded the same certified batch from cache, selected light mode by default, rendered 12 KPI cards and three charts, enabled all nine filters, passed RSM/TSO/SR/Dealer/Product value matching, displayed working tooltips and reports, produced no console or page errors, and had no horizontal overflow. Screenshots are stored under `assets/screenshots/v3.6.0-*`.

@@ -121,6 +121,8 @@ async function main() {
     url: page.url(),
     title: await page.title(),
     frameUrl: appFrame.url(),
+    theme: await appFrame.evaluate(() => document.documentElement.dataset.theme),
+    bodyBackground: await appFrame.locator('body').evaluate(element => getComputedStyle(element).backgroundImage),
     statusTitle: await read('#statusTitle'),
     statusText: await read('#statusText'),
     lastRefresh: await read('#sideStamp'),
