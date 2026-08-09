@@ -501,6 +501,15 @@ test('resolves stale reused-SR hierarchy rows from selected-month Sales evidence
   ok(!diagnostics.issues.some(x=>x.code==='HIERARCHY_SOURCE_CONFLICT'));
 });
 
+test('uses a selected-period target fact to resolve a zero-activity SR hierarchy path',()=>{
+  const assignment=(tso,dealer)=>({asmId:'EMPLOYEE:1',rsmId:'EMPLOYEE:2',tsoId:'EMPLOYEE:'+tso,srId:'EMPLOYEE:3',dealerId:'DEALER:'+dealer,effectiveFrom:'2026-08-01',effectiveTo:'2026-08-31',sourceRow:Number(dealer)});
+  const hierarchy={sourceId:'SRC_HIERARCHY',records:[],dimensions:{employees:{},dealers:{}},hierarchyAssignments:[assignment('4','10'),assignment('5','20')]};
+  const target=SIP.Normalizer.masterRecord({recordId:'T',sourceDataset:'Sales Data Base Monthly',sourceRecordId:'T',contractId:'T',moduleId:'SALES',recordType:'PLAN',metricId:'TARGET_AMOUNT',periodStart:'2026-08-01',numericValue:100,srId:'EMPLOYEE:3',dealerId:'DEALER:10'});
+  const sales={sourceId:'SRC_SALES_MONTHLY',records:[target],dimensions:{employees:{},dealers:{}}},diagnostics=new SIP.Diagnostics(),context={diagnostics,selectedSalesPeriod:{periodStart:'2026-08-01'}};
+  const result=SIP.HierarchyProvider.apply([sales,hierarchy],diagnostics,context);
+  equal(result.staleAssignmentsExcluded,1);equal(hierarchy.hierarchyAssignments[0].tsoId,'EMPLOYEE:4');
+});
+
 test('joins HR Attendance by stable SR ID and explicit selected-month dates',()=>{
   const weekdays=Array(42).fill('');weekdays[6]='Wed';weekdays[7]='Thu';weekdays[8]='Fri';weekdays[41]='month_start';
   const header=Array(42).fill('');['RSM ID','RSM Name','TSO ID','TSO Name','SR ID','SR Name','1','2','3'].forEach((x,i)=>header[i]=x);header[41]='2026-07-01';

@@ -10,7 +10,7 @@ Attendance still had no month key, the August target header was not recognized,
 and the generated Master/Hierarchy/Relationship sheets had continued growing.
 
 No source tab was deleted. `Attendance!AP1:AP2` is the only source-sheet update:
-`month_start` plus a formula linked to `Sales Data Base Monthly!B2`.
+`month_start` plus an ISO-text formula linked to `Sales Data Base Monthly!B2`.
 
 ## Architecture
 

@@ -34,7 +34,7 @@ SIP.HierarchyProvider=(function(){
   function resolveActive(assignments,parsed,diagnostics,context){
     var groups={},sales={},attendance={},excluded=0,out=[];
     assignments.forEach(function(a){groups[a.srId]=groups[a.srId]||[];groups[a.srId].push(a);});
-    var salesSource=find(parsed,'SRC_SALES_MONTHLY');(salesSource&&salesSource.records||[]).forEach(function(r){if(r.metric_id==='SALES_AMOUNT'&&samePeriod(r,context)&&r.sr_id&&r.dealer_id)sales[r.sr_id+'|'+r.dealer_id]=true;});
+    var salesSource=find(parsed,'SRC_SALES_MONTHLY');(salesSource&&salesSource.records||[]).forEach(function(r){if(samePeriod(r,context)&&r.sr_id&&r.dealer_id)sales[r.sr_id+'|'+r.dealer_id]=true;});
     var attendanceSource=find(parsed,'SRC_ATTENDANCE');(attendanceSource&&attendanceSource.attendanceObservations||[]).forEach(function(o){attendance[o.srId]=attendance[o.srId]||{};attendance[o.srId][o.rsmId+'|'+o.tsoId]=true;});
     Object.keys(groups).forEach(function(srId){var rows=groups[srId],paths={};rows.forEach(function(a){paths[path(a)]=true;});if(Object.keys(paths).length<=1){out=out.concat(rows);return;}
       var evidence={};rows.forEach(function(a){if(sales[srId+'|'+a.dealerId])evidence[path(a)]=true;});
