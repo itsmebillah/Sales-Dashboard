@@ -4,9 +4,9 @@ Governed sales analytics from heterogeneous Google Sheets data to a secure execu
 
 ![Sales Intelligence Platform social preview](assets/social-preview/sales-intelligence-platform-social-preview.png)
 
-[![Version](https://img.shields.io/badge/version-3.0.1-0f766e?style=flat-square)](RELEASE_NOTES.md)
+[![Version](https://img.shields.io/badge/version-3.7.0-0f766e?style=flat-square)](RELEASE_NOTES.md)
 [![Status](https://img.shields.io/badge/status-active-15803d?style=flat-square)](IMPLEMENTATION_ROADMAP.md)
-[![Tests](https://img.shields.io/badge/tests-17%20passing-15803d?style=flat-square)](tests/run-tests.js)
+[![Tests](https://img.shields.io/badge/tests-39%20passing-15803d?style=flat-square)](tests/run-tests.js)
 [![Platform](https://img.shields.io/badge/platform-Apps%20Script%20HTML%20Service-111827?style=flat-square)](#technology-stack)
 
 [Live Dashboard](https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Release Notes](RELEASE_NOTES.md)
@@ -24,9 +24,12 @@ The project is built for business teams that need spreadsheet accessibility with
 - Normalization, validation, quarantine, relationship resolution, and diagnostics
 - Chunked, checksummed caching for Apps Script runtime limits
 - One-pass KPI aggregation across executive and hierarchy levels
+- `Hierarchy tab` as the canonical ASM/RSM/TSO/SR/Dealer provider; the legacy generated hierarchy is retained only for rollback
+- HR Attendance joined by stable SR ID and explicit date, with the Attendance month linked to the selected Sales month
+- Strict selected-period alignment for operational Sales, Target, Lifting, Collection, and Projection facts
 - Sales, target, collection, projection, lifting, inventory, dealer, and product views
 - Working-day forecasts, confidence inputs, risks, and deterministic insights
-- Identical KPI contracts at company, RSM, TSO, SR, dealer, and product levels
+- Identical KPI contracts at company, ASM, RSM, TSO, SR, territory/area, dealer, and product levels
 - Cache-only dashboard hydration that cannot trigger source parsing
 - Responsive Apps Script HTML Service dashboard with controlled live refresh
 
@@ -42,7 +45,7 @@ The [full dashboard capture](assets/screenshots/sales-dashboard-desktop.png) sho
 
 ```mermaid
 flowchart LR
-    Sources[Operational Google Sheets] --> Parsers[Apps Script parsers]
+    Sources[Sales, Lifting, Projection, Hierarchy tab, Attendance] --> Parsers[Apps Script parsers]
     Parsers --> Quality[Normalization and quality gates]
     Quality --> Master[(Canonical Master Dataset)]
     Master --> MasterCache[Checksummed Master cache]
@@ -52,7 +55,7 @@ flowchart LR
     HTML --> Dashboard[Executive dashboard]
 ```
 
-The architectural invariant is simple: parsers are the only ingestion writers, the Master Dataset is the canonical analytical ledger, and every metric or dashboard is a read-only consumer. No KPI module reads raw source sheets or recalculates another module's formula.
+The architectural invariant is simple: parsers are the only ingestion readers, the Master Dataset is the canonical analytical ledger, and every metric or dashboard is a read-only consumer. Hierarchy and Attendance remain compact runtime/cache models instead of being duplicated into large generated fact sheets. No KPI module reads raw source sheets or recalculates another module's formula.
 
 Read [CORE_PLATFORM_ARCHITECTURE.md](CORE_PLATFORM_ARCHITECTURE.md) and the architecture decision records in [`docs`](docs) for the full contract.
 
@@ -88,7 +91,7 @@ Set-Location Sales-Dashboard
 npm test
 ```
 
-The suite covers parsing, normalization, relationship resolution, validation, cache integrity, KPI contracts, risk rules, generation consistency, and a 100,000-observation performance budget.
+The suite covers parsing, normalization, hierarchy migration, Attendance month/date joins, target parsing, period alignment, relationship resolution, validation, cache integrity, KPI contracts, risk rules, generation consistency, and a 100,000-observation performance budget.
 
 ## Deployment
 

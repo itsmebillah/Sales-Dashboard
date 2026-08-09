@@ -1,13 +1,14 @@
 SIP.MaintenanceEngine=(function(){
   var BUSINESS={'Sales Data Base Monthly':true,'Previous Month Sales':true,'Monthly Projection':true,'Dealer lifting':true,'Attendance':true};
   var CLASSIFICATION={
-    'Dashboard Cache':'Cache','Master Dataset':'Runtime','Master Lookup':'Metadata','Calendar':'Metadata','Holiday':'Metadata','Configuration':'Metadata','Hierarchy':'Metadata','Relationship Model':'Metadata','Parser Contract':'Metadata','Metric Dictionary':'Metadata','Module Registry':'Metadata','Source Registry':'Metadata','Import Batches':'Log','Quality Rules':'Metadata','Quality Results':'Log','Metric Store':'Historical Cache','Action Register':'Recovery','Audit Log':'Log','Platform Guide':'Metadata'
+    'Dashboard Cache':'Cache','Master Dataset':'Archive','Master Lookup':'Metadata','Calendar':'Metadata','Holiday':'Metadata','Configuration':'Metadata','Hierarchy':'Archive','Hierarchy tab':'Business Source','Relationship Model':'Archive','Parser Contract':'Metadata','Metric Dictionary':'Metadata','Module Registry':'Metadata','Source Registry':'Metadata','Import Batches':'Log','Quality Rules':'Metadata','Quality Results':'Log','Metric Store':'Historical Cache','Action Register':'Recovery','Audit Log':'Log','Platform Guide':'Metadata'
   };
   function inventory(spreadsheet){return spreadsheet.getSheets().map(function(sheet){var name=sheet.getName();return{name:name,classification:BUSINESS[name]?'Business':(CLASSIFICATION[name]||'Unclassified'),rows:sheet.getLastRow(),columns:sheet.getLastColumn(),maxRows:sheet.getMaxRows(),maxColumns:sheet.getMaxColumns(),automaticCleanup:cleanupPolicy(name)};});}
   function cleanupPolicy(name){
     if(BUSINESS[name])return'PERMANENT_NO_AUTOMATION';
     if(name==='Dashboard Cache')return'ACTIVE_CERTIFIED_ONLY';
-    if(name==='Master Dataset'||name==='Hierarchy'||name==='Relationship Model'||name==='Calendar')return'REPLACE_AFTER_SUCCESSFUL_BUILD';
+    if(name==='Calendar')return'REPLACE_AFTER_SUCCESSFUL_BUILD';
+    if(name==='Master Dataset'||name==='Hierarchy'||name==='Relationship Model')return'RETAIN_FOR_ROLLBACK';
     if(name==='Import Batches'||name==='Quality Results')return'90_DAYS_OR_LAST_100_BATCHES';
     return'REPORT_ONLY_UNTIL_REFERENCE_PROVEN_SAFE';
   }

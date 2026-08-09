@@ -11,6 +11,8 @@ SIP.Config = (function () {
       masterDataset: 'Master Dataset',
       calendar: 'Calendar',
       holidays: 'Holiday',
+      hierarchySource: 'Hierarchy tab',
+      attendance: 'Attendance',
       hierarchy: 'Hierarchy',
       relationships: 'Relationship Model'
     },

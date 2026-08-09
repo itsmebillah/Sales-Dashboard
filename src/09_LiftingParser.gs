@@ -13,7 +13,7 @@ SIP.LiftingParser = (function () {
     var dayStart = H.find(header.columns, ['DAY_REMAIN']);
     var totalLifting = H.find(header.columns, ['TOTAL_LIFTING']);
     var days = C.contiguousDayColumns(rows[header.rowIndex], dayStart, totalLifting);
-    var records = [], dimensions = { employees: {}, dealers: {}, depots: {} }, loaded = 0, ignored = 0;
+    var records = [], dimensions = { employees: {}, dealers: {}, depots: {}, territories: {} }, loaded = 0, ignored = 0;
     var seenDealers = {};
     for (var r = header.rowIndex + 1; r < rows.length; r++) {
       var row = rows[r], dealerCode = U.normalizeId(C.value(row, header.columns, ['S_L_NO']));
@@ -30,13 +30,15 @@ SIP.LiftingParser = (function () {
       var depotName = U.text(C.value(row, header.columns, ['DEPO']));
       var depotId = depotName ? 'DEPOT:' + U.hash(U.normalizeName(depotName)).slice(0, 16) : '';
       if (depotId) dimensions.depots[depotId] = { id: depotId, name: depotName, normalizedName: U.normalizeName(depotName) };
+      var territoryName=U.text(C.value(row, header.columns, ['TERRITORY_AREA'])),territoryId=entityId('TERRITORY',territoryName);
+      if(territoryId)dimensions.territories[territoryId]={id:territoryId,name:territoryName,normalizedName:U.normalizeName(territoryName)};
       var base = { batchId: context.batchId, sourceSystem: 'OPERATIONAL_EXPORT', sourceDataset: source.definition.name,
         sourceRecordId: dealerCode + ':' + period.periodStart, contractId: 'PC_LIFTING_V1', moduleId: 'LIFTING', recordType: 'OBSERVATION',
         periodStart: period.periodStart, periodEnd: period.periodEnd, ingestedAt: context.ingestedAt,
         rsmId: rsm.id, tsoId: tso.id, dealerId: dealer.id, depotId: depotId,
-        territoryId: entityId('TERRITORY', C.value(row, header.columns, ['TERRITORY_AREA'])),
+        territoryId: territoryId,
         attributes: { sourceRow: r + 1, dealerName: dealer.name, dealerCode: dealer.code, depotName: depotName,
-          managerNames: { rsm: rsm.name, tso: tso.name, nsmAsm: U.text(C.value(row, header.columns, ['NSM_ASM'])) } } };
+          territoryName:territoryName, managerNames: { rsm: rsm.name, tso: tso.name, nsmAsm: U.text(C.value(row, header.columns, ['NSM_ASM'])) } } };
       days.forEach(function (d) {
         var amount = U.number(row[d.index], context.config.parser.blankTokens);
         if (amount !== null) records.push(C.metricRecord(base, 'LIFTING_AMOUNT', amount, U.isoDate(d.day, period.year, period.month), 'D' + d.day));

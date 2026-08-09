@@ -4,7 +4,9 @@ SIP.SourceReader = (function () {
       { id: 'SRC_SALES_MONTHLY', moduleId: 'SALES', name: config.sheets.sales },
       { id: 'SRC_SALES_PREVIOUS', moduleId: 'SALES_HISTORY', name: config.sheets.previousSales, required: false },
       { id: 'SRC_DEALER_LIFTING', moduleId: 'LIFTING', name: config.sheets.lifting },
-      { id: 'SRC_MONTHLY_PROJECTION', moduleId: 'COLLECTION_PROJECTION', name: config.sheets.transactions }
+      { id: 'SRC_MONTHLY_PROJECTION', moduleId: 'COLLECTION_PROJECTION', name: config.sheets.transactions },
+      { id: 'SRC_HIERARCHY', moduleId: 'HIERARCHY', name: config.sheets.hierarchySource },
+      { id: 'SRC_ATTENDANCE', moduleId: 'ATTENDANCE', name: config.sheets.attendance }
     ];
     var output = {};
     definitions.forEach(function (def) {

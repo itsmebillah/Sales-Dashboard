@@ -36,7 +36,7 @@ SIP.SalesParser = (function () {
         if (amount !== null) records.push(C.metricRecord(base, 'SALES_AMOUNT', amount, U.isoDate(d.day, period.year, period.month), 'D' + d.day));
       });
       addNamedMetric(records, base, row, header, ['SALES_OF_'], 'SALES_MTD_AMOUNT', context);
-      addNamedMetric(records, base, row, header, ['JULY_26_MONTHLY_TGT_PRODUCT_WISE_VALUE', 'MONTHLY_TGT_PRODUCT_WISE_VALUE'], 'TARGET_AMOUNT', context, 'PLAN');
+      addNamedMetric(records, base, row, header, ['MONTHLY_TGT_PRODUCT_WISE_VALUE'], 'TARGET_AMOUNT', context, 'PLAN', true);
       addNamedMetric(records, base, row, header, ['NO_OF_ORDER'], 'ORDER_COUNT', context);
       addNamedMetric(records, base, row, header, ['CURRENT_WD'], 'WORKING_DAYS_ELAPSED', context);
       addNamedMetric(records, base, row, header, ['DUE_WD'], 'DUE_WORKING_DAYS', context);
@@ -75,14 +75,15 @@ SIP.SalesParser = (function () {
         joiningDate: U.isoDate(C.value(row, columns, ['JOINING_DATE'])), areaPoint: dealer.name } };
   }
 
-  function addNamedMetric(records, base, row, header, aliases, metricId, context, recordType) {
-    var index = aliases[0].slice(-1) === '_' ? findPrefix(header.keys, aliases[0]) : H.find(header.columns, aliases);
+  function addNamedMetric(records, base, row, header, aliases, metricId, context, recordType, suffixMatch) {
+    var index = suffixMatch ? findSuffix(header.keys,aliases[0]) : (aliases[0].slice(-1) === '_' ? findPrefix(header.keys, aliases[0]) : H.find(header.columns, aliases));
     if (index < 0) return;
     var v = U.number(row[index], context.config.parser.blankTokens);
     if (v !== null) records.push(C.metricRecord(base, metricId, v, '', metricId, { recordType: recordType || 'OBSERVATION' }));
   }
 
   function findPrefix(keys, prefix) { for (var i = 0; i < keys.length; i++) if (keys[i].indexOf(prefix) === 0) return i; return -1; }
+  function findSuffix(keys, suffix) { for (var i = 0; i < keys.length; i++) if (keys[i]===suffix||keys[i].slice(-suffix.length)===suffix) return i; return -1; }
 
   function addHistoricalMetrics(records, base, row, header, context) {
     header.keys.forEach(function (key, index) {
@@ -120,7 +121,8 @@ SIP.SalesParser = (function () {
 
   function isPresentationRow(row,header,days,products,context) {
     var indexes=days.map(function(x){return x.index;}).concat(products.map(function(x){return x.index;}));
-    ['SALES_OF_','MONTHLY_TGT_PRODUCT_WISE_VALUE','NO_OF_ORDER'].forEach(function(alias){var index=alias.slice(-1)==='_'?findPrefix(header.keys,alias):H.find(header.columns,[alias]);if(index>=0)indexes.push(index);});
+    ['SALES_OF_','NO_OF_ORDER'].forEach(function(alias){var index=alias.slice(-1)==='_'?findPrefix(header.keys,alias):H.find(header.columns,[alias]);if(index>=0)indexes.push(index);});
+    var targetIndex=findSuffix(header.keys,'MONTHLY_TGT_PRODUCT_WISE_VALUE');if(targetIndex>=0)indexes.push(targetIndex);
     return !indexes.some(function(index){var value=U.number(row[index],context.config.parser.blankTokens);return value!==null&&value!==0;});
   }
   function monthlyWorkingDays(rows, headerIndex) {

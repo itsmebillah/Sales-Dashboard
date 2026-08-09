@@ -1,19 +1,20 @@
 SIP.KpiAccumulator = (function () {
   var D = SIP.KpiDefinitions;
 
-  function aggregate(master) {
-    var entities = {}, accepted = 0, excluded = 0;
+  function aggregate(master,options) {
+    options=options||{};var entities = {}, accepted = 0, excluded = 0,periodExcluded=0;
     (master.records || []).forEach(function (record) {
       if (record.quality_status !== 'VALID' && record.quality_status !== 'CERTIFIED') { excluded++; return; }
+      if(options.periodStart&&record.period_start&&record.period_start!==options.periodStart&&!/^HISTORICAL_/.test(record.metric_id||'')){periodExcluded++;return;}
       accepted++;
       entityRefs(record).forEach(function (ref) { apply(ensure(entities, ref), record); });
     });
-    return { entities: entities, acceptedRecords: accepted, excludedRecords: excluded };
+    return { entities: entities, acceptedRecords: accepted, excludedRecords: excluded, periodExcludedRecords:periodExcluded };
   }
 
   function entityRefs(r) {
     var refs = [{ type: 'COMPANY', id: r.company_id || 'COMPANY:DEFAULT' }];
-    [['RSM',r.rsm_id],['TSO',r.tso_id],['SR',r.sr_id || (r.module_id === 'SALES' ? r.employee_id : '')],
+    [['ASM',r.asm_id],['RSM',r.rsm_id],['TSO',r.tso_id],['SR',r.sr_id || (r.module_id === 'SALES' ? r.employee_id : '')],['TERRITORY',r.territory_id],['AREA',r.area_id],
       ['DEALER',r.dealer_id],['PRODUCT',r.product_id],['CATEGORY',r.product_group_id]].forEach(function (x) { if (x[1]) refs.push({ type:x[0], id:x[1] }); });
     var seen = {}; return refs.filter(function (x) { var k=x.type+'|'+x.id; if(seen[k])return false; seen[k]=true; return true; });
   }
@@ -22,14 +23,14 @@ SIP.KpiAccumulator = (function () {
     var key = ref.type + '|' + ref.id;
     if (!entities[key]) entities[key] = {
       entityType: ref.type, entityId: ref.id, sums: {}, maxima: {}, latest: {}, periods: {}, daily: {},
-      sets: { dealers:{}, srs:{}, tsos:{}, rsms:{}, products:{}, collectingDealers:{}, projectingDealers:{} }, recordCount: 0
+      sets: { dealers:{}, srs:{}, tsos:{}, rsms:{}, asms:{}, products:{}, collectingDealers:{}, projectingDealers:{} }, recordCount: 0
     };
     return entities[key];
   }
 
   function apply(state, r) {
     state.recordCount++;
-    if(r.metric_id==='SALES_AMOUNT'||r.source_dataset==='Sales Data Base Monthly'){addSet(state.sets.dealers,r.dealer_id);addSet(state.sets.srs,r.sr_id);addSet(state.sets.tsos,r.tso_id);addSet(state.sets.rsms,r.rsm_id);}
+    if(r.metric_id==='SALES_AMOUNT'||r.source_dataset==='Sales Data Base Monthly'){addSet(state.sets.dealers,r.dealer_id);addSet(state.sets.srs,r.sr_id);addSet(state.sets.tsos,r.tso_id);addSet(state.sets.rsms,r.rsm_id);addSet(state.sets.asms,r.asm_id);}
     if(r.metric_id==='PRODUCT_QUANTITY')addSet(state.sets.products,r.product_id);
     if (r.metric_id === 'COLLECTION_AMOUNT') addSet(state.sets.collectingDealers, r.dealer_id);
     if (r.metric_id === 'PROJECTION_AMOUNT') addSet(state.sets.projectingDealers, r.dealer_id);

@@ -11,7 +11,10 @@ BI.cardDefinitions=[
   ['Secondary','secondary','Flow','var(--teal)',x=>'Commercial movement'],
   ['Growth','growthPct','Growth','var(--teal)',x=>x.growthComparable?'Comparable period':'Awaiting comparable period'],
   ['Momentum','momentumPct','Trend','var(--primary)',x=>BI.title(x.trend||'Stable')],
-  ['Products','productCount','Mix','var(--purple)',x=>BI.number(x.srCount)+' sales representatives']
+  ['Products','productCount','Mix','var(--purple)',x=>BI.number(x.srCount)+' sales representatives'],
+  ['Present','present','Attendance','var(--teal)',x=>'Absent '+BI.number(x.absent)],
+  ['Attendance','attendancePct','Rate','var(--primary)',x=>'Matched to '+(x.attendancePeriodStart?x.attendancePeriodStart.slice(0,7):'selected Sales month')],
+  ['Sales / present day','salesPerPresentDay','Efficiency','var(--amber)',x=>'Valid when present days are available']
 ];
 BI.render=()=>{const scope=BI.state.scope||BI.state.data.executive;BI.$('scopeName').textContent=scope.periodStart?'Period '+scope.periodStart.slice(0,7):BI.entityName(scope,BI.state.activeLevel);BI.renderCards(scope);BI.renderForecast(scope);BI.renderRankings();BI.renderIntelligence();BI.Tables.render();requestAnimationFrame(()=>BI.Charts.renderAll(scope));};
 BI.renderCards=scope=>{const volume=['PRODUCT','CATEGORY'].includes(BI.state.activeLevel),cards=volume?[['Product volume','productVolume','Volume','var(--primary)',x=>'Source-unit quantity'],['Mix','mixPct','Mix','var(--teal)',x=>'Compatible source units only'],['Rank','rank','Rank','var(--amber)',x=>'Volume rank'],['Records','recordCount','Facts','var(--purple)',x=>'Certified product observations']]:BI.cardDefinitions;BI.$('kpiGrid').innerHTML=cards.map((card,index)=>{const isPercent=card[1].toLowerCase().includes('pct'),value=isPercent?BI.percent(scope[card[1]]):BI.number(scope[card[1]]);return'<article class="kpi-card" tabindex="0" style="--card-color:'+card[3]+'" data-section="'+(index<4?'performance':'commercial')+'"><div class="kpi-top"><span>'+card[0]+'</span><span class="kpi-icon">'+card[2].slice(0,1)+'</span></div><div class="kpi-value">'+value+'</div><div class="kpi-note">'+BI.escape(card[4](scope))+'</div></article>'}).join('');BI.$('kpiGrid').querySelectorAll('.kpi-card').forEach(card=>card.addEventListener('click',()=>BI.$(card.dataset.section).scrollIntoView({behavior:'smooth'})));};

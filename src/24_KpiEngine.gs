@@ -2,8 +2,8 @@ SIP.KpiEngine = (function () {
   var A = SIP.KpiAccumulator;
 
   function calculate(master, options) {
-    options = options || {}; var started=Date.now(), aggregated=A.aggregate(master), contracts={};
-    Object.keys(aggregated.entities).forEach(function(key){contracts[key]=finalize(aggregated.entities[key],master.calendar);});
+    options = options || {}; var started=Date.now(),currentPeriod=options.periodStart||master.currentPeriodStart||(master.calendar&&master.calendar.current&&master.calendar.current.periodStart)||'',aggregated=A.aggregate(master,{periodStart:currentPeriod}), contracts={};
+    Object.keys(aggregated.entities).forEach(function(key){contracts[key]=finalize(aggregated.entities[key],master.calendar,master.attendance);});
     enrichRanksAndContribution(contracts);
     var risks=SIP.RiskEngine.evaluate(contracts,options);
     var generatedAt=SIP.Utils.nowIso(); risks.forEach(function(r){r.generatedAt=generatedAt;});
@@ -14,8 +14,8 @@ SIP.KpiEngine = (function () {
       batchId:master.batchId, generatedAt:generatedAt,
       executive:company,
       labels:buildDisplayLabels(master.dimensions||{}),
-      hierarchy:{ COMPANY:byType.COMPANY||[], RSM:byType.RSM||[], TSO:byType.TSO||[], SR:byType.SR||[], DEALER:byType.DEALER||[], PRODUCT:byType.PRODUCT||[], CATEGORY:byType.CATEGORY||[] },
-      periods:buildPeriodContexts(master),
+      hierarchy:{ COMPANY:byType.COMPANY||[], ASM:byType.ASM||[], RSM:byType.RSM||[], TSO:byType.TSO||[], SR:byType.SR||[], TERRITORY:byType.TERRITORY||[], AREA:byType.AREA||[], DEALER:byType.DEALER||[], PRODUCT:byType.PRODUCT||[], CATEGORY:byType.CATEGORY||[] },
+      periods:buildPeriodContexts(master,company,currentPeriod),
       sales:buildSalesModule(contracts),
       dealers:buildDealerModule(byType.DEALER||[],risks),
       products:buildProductModule(byType.PRODUCT||[]),
@@ -26,14 +26,14 @@ SIP.KpiEngine = (function () {
       forecastBase:{ executive:company.forecastBase, entities:Object.keys(contracts).reduce(function(o,k){o[k]=contracts[k].forecastBase;return o;},{}) },
       risks:risks,
       insights:risks.map(toInsight),
-      quality:{ acceptedRecords:aggregated.acceptedRecords, excludedRecords:aggregated.excludedRecords,
+      quality:{ acceptedRecords:aggregated.acceptedRecords, excludedRecords:aggregated.excludedRecords,periodExcludedRecords:aggregated.periodExcludedRecords,currentPeriodStart:currentPeriod,
         masterQualityFlags:(master.qualityFlags||[]).length, certification:master.certification&&master.certification.certified?'CERTIFIED':'NOT_CERTIFIED', certificationGate:master.certification||null },
       performance:{ recordsVisited:(master.records||[]).length, entityContracts:Object.keys(contracts).length, calculationMs:Date.now()-started }
     };
     return snapshot;
   }
 
-  function finalize(state,calendar) {
+  function finalize(state,calendar,attendance) {
     var sum=state.sums,max=state.maxima;
     var sales=sum.SALES_AMOUNT||0,target=sum.TARGET_AMOUNT||0,collection=sum.COLLECTION_AMOUNT||0;
     var current=calendar&&calendar.current?calendar.current.elapsed:0;
@@ -44,17 +44,19 @@ SIP.KpiEngine = (function () {
     var prior=forecast.previousMonthComparableSales||null;
     var growthComparable=prior!==null&&prior!==0;
     var growth=growthComparable?(sales-prior)/Math.abs(prior):null;
+    var attendanceEntity=attendance&&attendance.entities&&attendance.entities[state.entityType+'|'+state.entityId]||null;
     return {
       entityType:state.entityType,entityId:state.entityId,
       sales:sales,target:target,achievementPct:ratio(sales,target),gap:target-sales,
       forecast:forecast.workingDayForecast,forecastAchievementPct:ratio(forecast.workingDayForecast,target),
       requiredDailySales:due>0?Math.max(target-sales,0)/due:(target>sales?null:0),
       averageDailySales:forecast.averageDailySales,currentWorkingDay:current,dueWorkingDay:due,totalWorkingDay:total,
-      dealerCount:A.count(state.sets.dealers),srCount:A.count(state.sets.srs),tsoCount:A.count(state.sets.tsos),
+      dealerCount:A.count(state.sets.dealers),srCount:A.count(state.sets.srs),tsoCount:A.count(state.sets.tsos),asmCount:A.count(state.sets.asms),
       rsmCount:A.count(state.sets.rsms),productCount:A.count(state.sets.products),
       collection:collection,projection:sum.PROJECTION_AMOUNT||0,lifting:sum.LIFTING_AMOUNT||0,
       stock:A.latestSum(state,'STOCK_AMOUNT'),secondary:sum.SECONDARY_AMOUNT||0,orders:sum.ORDER_COUNT||0,
       growthPct:growth,growthReferenceAmount:prior,growthComparable:growthComparable,momentumPct:forecast.momentum,
+      present:attendanceEntity?attendanceEntity.present:0,absent:attendanceEntity?attendanceEntity.absent:0,attendancePct:attendanceEntity?attendanceEntity.attendancePct:null,salesPerPresentDay:attendanceEntity&&attendanceEntity.present?sales/attendanceEntity.present:null,attendancePeriodStart:attendance&&attendance.periodStart||'',
       collectionTrendPct:SIP.ForecastBaseEngine.seriesMomentum(state.daily.COLLECTION_AMOUNT||{}),
       collectionFlowRatioPct:ratio(collection,sales),periodSalesCollectionGap:sales-collection,
       productVolume:sum.PRODUCT_QUANTITY||0,contributionPct:null,mixPct:null,rank:null,trend:forecast.historicalTrend.direction,
@@ -77,18 +79,20 @@ SIP.KpiEngine = (function () {
   function buildCollectionModule(c,dealers){return {total:c.collection,ratio:c.collectionFlowRatioPct,trendPct:c.collectionTrendPct,coveragePct:ratio(dealers.filter(function(x){return x.collection>0;}).length,dealers.filter(function(x){return x.sales>0;}).length),exceptions:dealers.filter(function(x){return x.sales>0&&x.collection===0;}).map(function(x){return x.entityId;})};}
   function buildProjectionModule(c,dealers){return {total:c.projection,dealerCount:dealers.filter(function(x){return x.projection>0;}).length,exceptions:dealers.filter(function(x){return x.sales>0&&x.projection===0;}).map(function(x){return x.entityId;})};}
   function buildLiftingModule(c,dealers){return {total:c.lifting,stock:c.stock,secondary:c.secondary,salesFlowRatioPct:ratio(c.lifting,c.sales),exceptions:dealers.filter(function(x){return x.sales>0&&x.lifting===0;}).map(function(x){return x.entityId;})};}
-  function buildPeriodContexts(master){var out={};(master.records||[]).forEach(function(r){if((r.quality_status!=='VALID'&&r.quality_status!=='CERTIFIED')||(r.metric_id!=='SALES_AMOUNT'&&r.metric_id!=='HISTORICAL_DAILY_SALES_AMOUNT'))return;var p=r.period_start;if(!p)return;var x=out[p]=out[p]||{entityType:'COMPANY',entityId:'PERIOD:'+p,periodStart:p,sales:0,target:null,forecast:null,achievementPct:null,gap:null,collection:null,projection:null,lifting:null,stock:null,secondary:null,productCount:0,srCount:0,tsoCount:0,rsmCount:0,dealerCount:0};x.sales+=Number(r.numeric_value)||0;});return Object.keys(out).sort().map(function(k){return out[k];});}
-  function buildAttendanceModule(attendance){attendance=attendance||{};return {type:attendance.type||'SALES_ACTIVITY_NOT_HR',statusSource:attendance.statusSource||'SALES_ACTIVITY_DERIVED',providerContract:attendance.providerContract||'ATTENDANCE_PROVIDER_V1',hrAttendance:false,employeeCount:attendance.employeeCount||0,workingDays:attendance.workingDays||0,present:attendance.present||0,absent:attendance.absent||0};}
+  function buildPeriodContexts(master,company,currentPeriod){var out={};(master.records||[]).forEach(function(r){if((r.quality_status!=='VALID'&&r.quality_status!=='CERTIFIED')||(r.metric_id!=='SALES_AMOUNT'&&r.metric_id!=='HISTORICAL_DAILY_SALES_AMOUNT'))return;var p=r.period_start;if(!p)return;var x=out[p]=out[p]||{entityType:'COMPANY',entityId:'PERIOD:'+p,periodStart:p,sales:0,target:null,forecast:null,achievementPct:null,gap:null,collection:null,projection:null,lifting:null,stock:null,secondary:null,productCount:0,srCount:0,tsoCount:0,rsmCount:0,dealerCount:0,present:0,absent:0,attendancePct:null,salesPerPresentDay:null,attendancePeriodStart:''};x.sales+=Number(r.numeric_value)||0;});if(currentPeriod&&out[currentPeriod])Object.keys(company).forEach(function(k){if(k!=='entityId'&&k!=='entityType')out[currentPeriod][k]=company[k];});return Object.keys(out).sort().map(function(k){return out[k];});}
+  function buildAttendanceModule(attendance){attendance=attendance||{};return {type:attendance.type||'SALES_ACTIVITY_NOT_HR',statusSource:attendance.statusSource||'SALES_ACTIVITY_DERIVED',providerContract:attendance.providerContract||'ATTENDANCE_PROVIDER_V1',hrAttendance:!!attendance.hrAttendance,periodStart:attendance.periodStart||'',periodEnd:attendance.periodEnd||'',employeeCount:attendance.employeeCount||0,workingDays:attendance.workingDays||0,present:attendance.present||0,absent:attendance.absent||0,attendancePct:attendance.attendancePct===undefined?null:attendance.attendancePct,observationCount:attendance.observationCount||0};}
   function toInsight(r){return {type:r.type,severity:r.severity,entity:r.entityType,entityId:r.entityId,metric:r.metric,value:r.value,threshold:r.threshold,riskId:r.riskId};}
   function buildDisplayLabels(dimensions){
-    var labels={COMPANY:{'COMPANY:DEFAULT':'Company total'},RSM:{},TSO:{},SR:{},DEALER:{},PRODUCT:{},CATEGORY:{}};
-    Object.keys(dimensions.employees||{}).forEach(function(id){var x=dimensions.employees[id]||{},name=x.name||x.normalizedName;if(!name)return;var role=String(x.role||'').toUpperCase();if(role==='RSM')labels.RSM[id]=name;else if(role==='TSO')labels.TSO[id]=name;else labels.SR[id]=name;});
+    var labels={COMPANY:{'COMPANY:DEFAULT':'Company total'},ASM:{},RSM:{},TSO:{},SR:{},TERRITORY:{},AREA:{},DEALER:{},PRODUCT:{},CATEGORY:{}};
+    Object.keys(dimensions.employees||{}).forEach(function(id){var x=dimensions.employees[id]||{},name=x.name||x.normalizedName;if(!name)return;var role=String(x.role||'').toUpperCase();if(role==='ASM')labels.ASM[id]=name;else if(role==='RSM')labels.RSM[id]=name;else if(role==='TSO')labels.TSO[id]=name;else labels.SR[id]=name;});
+    Object.keys(dimensions.territories||{}).forEach(function(id){var x=dimensions.territories[id]||{};if(x.name||x.normalizedName)labels.TERRITORY[id]=x.name||x.normalizedName;});
+    Object.keys(dimensions.areas||{}).forEach(function(id){var x=dimensions.areas[id]||{};if(x.name||x.normalizedName)labels.AREA[id]=x.name||x.normalizedName;});
     Object.keys(dimensions.dealers||{}).forEach(function(id){var x=dimensions.dealers[id]||{};if(x.name||x.normalizedName)labels.DEALER[id]=x.name||x.normalizedName;});
     Object.keys(dimensions.products||{}).forEach(function(id){var x=dimensions.products[id]||{},parts=[x.name,x.pack,x.group].filter(Boolean);if(parts.length)labels.PRODUCT[id]=parts.join(' · ');if(x.group)labels.CATEGORY['PRODUCT_GROUP:'+SIP.Utils.hash(x.group).slice(0,16)]=x.group;});
     return labels;
   }
   function ratio(a,b){return a===null||a===undefined||b===null||b===undefined||b===0?null:a/b;}
   function sumThrough(series,cutoff){return Object.keys(series).filter(function(k){return !cutoff||k<=cutoff;}).reduce(function(n,k){return n+(Number(series[k])||0);},0);}
-  function emptyCompany(){return finalize({entityType:'COMPANY',entityId:'COMPANY:DEFAULT',sums:{},maxima:{},latest:{},periods:{},daily:{},sets:{dealers:{},srs:{},tsos:{},rsms:{},products:{}},recordCount:0},null);}
+  function emptyCompany(){return finalize({entityType:'COMPANY',entityId:'COMPANY:DEFAULT',sums:{},maxima:{},latest:{},periods:{},daily:{},sets:{dealers:{},srs:{},tsos:{},rsms:{},asms:{},products:{}},recordCount:0},null,null);}
   return { calculate:calculate };
 }());

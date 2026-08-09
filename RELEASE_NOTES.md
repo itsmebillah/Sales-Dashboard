@@ -1,5 +1,24 @@
 # Release Notes
 
+## 3.7.0 — Canonical Hierarchy, HR Attendance, and Period Safety
+
+- Made `Hierarchy tab` the canonical hierarchy provider for stable ASM, RSM,
+  TSO, SR, and Dealer IDs. `Growth Rate` is ignored by ingestion and growth is
+  calculated only from comparable Sales facts.
+- Added derived effective dates/status and Dealer Lifting-based territory
+  enrichment without duplicating the hierarchy source.
+- Integrated HR Attendance by stable SR ID plus explicit attendance date. The
+  single `Attendance!AP2` month marker follows the selected Sales start date.
+- Added Present, Absent, Attendance %, and Sales per present day to KPI contracts,
+  filters, cards, and reports.
+- Added strict operational period alignment. July Collection/Projection cannot
+  enter August KPIs; explicitly historical Sales remains available for trends.
+- Made target parsing month-independent.
+- Stopped rewriting redundant `Master Dataset`, legacy `Hierarchy`, and
+  `Relationship Model` sheets. They remain unchanged as rollback archives while
+  the compact runtime model is certified and cached.
+- Expanded regression coverage from 32 to 39 passing test groups.
+
 ## 3.0.1 — Production Readiness Corrections
 
 - Restored and retained the original sheet-bound Apps Script project as the

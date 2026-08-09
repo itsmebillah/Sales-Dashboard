@@ -35,11 +35,14 @@
 
       <section class="filter-bar panel" aria-label="Global filters">
         <div class="filter-grid">
+          <label><span>ASM</span><select id="filterASM" data-level="ASM"></select></label>
           <label><span>RSM</span><select id="filterRSM" data-level="RSM"></select></label>
           <label><span>TSO</span><select id="filterTSO" data-level="TSO"></select></label>
           <label><span>SR</span><select id="filterSR" data-level="SR"></select></label>
           <label><span>Dealer</span><select id="filterDEALER" data-level="DEALER"></select></label>
           <label><span>Product</span><select id="filterPRODUCT" data-level="PRODUCT"></select></label>
+          <label><span>Territory / Area</span><select id="filterTERRITORY" data-level="TERRITORY"></select></label>
+          <label><span>Area</span><select id="filterAREA" data-level="AREA"></select></label>
           <label><span>Date</span><select id="filterDATE"></select></label>
           <label><span>Region / Zone</span><select id="filterREGION"></select></label>
           <label><span>Category</span><select id="filterCATEGORY"></select></label>
@@ -74,7 +77,7 @@
 
         <section id="reports" class="dashboard-section">
           <article class="panel report-panel">
-            <div class="panel-head report-head"><div><p>Operational performance</p><h3>Management register</h3></div><div class="report-tools"><select id="reportLevel"><option>RSM</option><option>TSO</option><option>SR</option><option>DEALER</option><option>PRODUCT</option></select><button id="exportButton">Export CSV</button></div></div>
+            <div class="panel-head report-head"><div><p>Operational performance</p><h3>Management register</h3></div><div class="report-tools"><select id="reportLevel"><option>ASM</option><option>RSM</option><option>TSO</option><option>SR</option><option>TERRITORY</option><option>AREA</option><option>DEALER</option><option>PRODUCT</option></select><button id="exportButton">Export CSV</button></div></div>
             <div id="reportTable"></div>
             <div id="mobileReport" class="mobile-report"></div>
             <div class="pagination"><span id="pageSummary">0 results</span><div><button id="previousPage">Previous</button><button id="nextPage">Next</button></div></div>

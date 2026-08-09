@@ -468,6 +468,71 @@ test('blocks certification and cache publication for failed batches', () => {
   ok(blocked,'uncertified dashboard publication must be blocked');
 });
 
+test('parses dynamic monthly targets without a hardcoded month name',()=>{
+  const rows=salesFixture().map(row=>row.slice());rows[0][0]="August'26";rows[3][11]="Sales of August'26";rows[3][14]="August'26 Monthly Tgt. Product Wise Value";
+  const config=SIP.Config.get(),diagnostics=new SIP.Diagnostics(),context={config,diagnostics,batchId:'TARGET',ingestedAt:'2026-08-09T00:00:00Z'};
+  const parsed=SIP.SalesParser.parse({definition:{id:'SRC_SALES_MONTHLY',name:config.sheets.sales},values:rows},context);
+  const target=parsed.records.find(x=>x.metric_id==='TARGET_AMOUNT');
+  ok(target);equal(target.numeric_value,1000);equal(target.period_start,'2026-08-01');
+});
+
+test('uses Hierarchy tab as the stable current-period hierarchy provider and ignores Growth Rate',()=>{
+  const hierarchyRows=[
+    ['ASM_ID','ASM Name','RSM ID','RSM Name','RSM Phone','TSO ID','TSO Name','TSO Phone','SR ID','SR Name','SR Phone','Dealer ID','Dealer Name','Dealer Phone','Growth Rate'],
+    ['2380','ASM One','3568','RSM One','','3680','TSO One','','3018','SR One','','137','M/S. Rupali Traders (137)','','999999%']
+  ];
+  const config=SIP.Config.get(),diagnostics=new SIP.Diagnostics(),context={config,diagnostics,batchId:'HIER',ingestedAt:'2026-07-09T00:00:00Z',selectedSalesPeriod:{periodStart:'2026-07-01',periodEnd:'2026-07-31'}};
+  const hierarchy=SIP.HierarchyParser.parse({definition:{id:'SRC_HIERARCHY',name:config.sheets.hierarchySource},values:hierarchyRows},context);
+  const sales=SIP.SalesParser.parse({definition:{id:'SRC_SALES_MONTHLY',name:config.sheets.sales},values:salesFixture()},context),parsed=[sales,hierarchy];
+  const provider=SIP.HierarchyProvider.apply(parsed,diagnostics,context),record=sales.records.find(x=>x.metric_id==='SALES_AMOUNT');
+  equal(provider.provider,'Hierarchy tab');equal(provider.growthRateUsed,false);equal(hierarchy.metadata.growthRateIgnored,true);
+  equal(record.asm_id,'EMPLOYEE:2380');equal(record.rsm_id,'EMPLOYEE:3568');equal(record.tso_id,'EMPLOYEE:3680');equal(record.sr_id,'EMPLOYEE:3018');
+  const graph=SIP.RelationshipEngine.build(parsed,diagnostics),types=new Set(graph.hierarchy.map(x=>x.type));
+  ok(types.has('SR_TO_TSO'));ok(types.has('TSO_TO_RSM'));ok(types.has('RSM_TO_ASM'));
+});
+
+test('resolves stale reused-SR hierarchy rows from selected-month Sales evidence',()=>{
+  const headers=['ASM_ID','ASM Name','RSM ID','RSM Name','RSM Phone','TSO ID','TSO Name','TSO Phone','SR ID','SR Name','SR Phone','Dealer ID','Dealer Name','Dealer Phone','Growth Rate'];
+  const rows=[headers,['2380','A','3568','RSM One','','3680','TSO One','','3018','SR One','','137','Current Dealer','',''],['981','B','1083','RSM Old','','2670','TSO Old','','3018','SR One','','999','Stale Dealer','','']];
+  const config=SIP.Config.get(),diagnostics=new SIP.Diagnostics(),context={config,diagnostics,batchId:'STALE',ingestedAt:'2026-07-09T00:00:00Z',selectedSalesPeriod:{periodStart:'2026-07-01',periodEnd:'2026-07-31'}};
+  const hierarchy=SIP.HierarchyParser.parse({definition:{id:'SRC_HIERARCHY',name:config.sheets.hierarchySource},values:rows},context),sales=SIP.SalesParser.parse({definition:{id:'SRC_SALES_MONTHLY',name:config.sheets.sales},values:salesFixture()},context);
+  const provider=SIP.HierarchyProvider.apply([sales,hierarchy],diagnostics,context);
+  equal(provider.staleAssignmentsExcluded,1);equal(provider.conflicts,0);equal(hierarchy.hierarchyAssignments.length,1);equal(hierarchy.hierarchyAssignments[0].tsoId,'EMPLOYEE:3680');
+  ok(!diagnostics.issues.some(x=>x.code==='HIERARCHY_SOURCE_CONFLICT'));
+});
+
+test('joins HR Attendance by stable SR ID and explicit selected-month dates',()=>{
+  const weekdays=Array(42).fill('');weekdays[6]='Wed';weekdays[7]='Thu';weekdays[8]='Fri';weekdays[41]='month_start';
+  const header=Array(42).fill('');['RSM ID','RSM Name','TSO ID','TSO Name','SR ID','SR Name','1','2','3'].forEach((x,i)=>header[i]=x);header[41]='2026-07-01';
+  const attendanceRows=[weekdays,header,['3568','RSM One','3680','TSO One','3018','SR One','P','A','P']];
+  const hierarchyRows=[['ASM_ID','ASM Name','RSM ID','RSM Name','RSM Phone','TSO ID','TSO Name','TSO Phone','SR ID','SR Name','SR Phone','Dealer ID','Dealer Name','Dealer Phone','Growth Rate'],['2380','ASM One','3568','RSM One','','3680','TSO One','','3018','SR One','','137','Dealer 137','','-100%']];
+  const config=SIP.Config.get(),diagnostics=new SIP.Diagnostics(),context={config,diagnostics,batchId:'ATT_HR',ingestedAt:'2026-07-09T00:00:00Z',selectedSalesPeriod:{periodStart:'2026-07-01',periodEnd:'2026-07-31'}};
+  const hierarchy=SIP.HierarchyParser.parse({definition:{id:'SRC_HIERARCHY',name:config.sheets.hierarchySource},values:hierarchyRows},context),attendance=SIP.AttendanceParser.parse({definition:{id:'SRC_ATTENDANCE',name:config.sheets.attendance},values:attendanceRows},context);
+  const result=SIP.HrAttendance.build([hierarchy,attendance],context);
+  equal(result.hrAttendance,true);equal(result.periodStart,'2026-07-01');equal(result.periodEnd,'2026-07-31');equal(result.present,2);equal(result.absent,1);equal(result.entities['SR|EMPLOYEE:3018'].attendancePct,2/3);
+  ok(attendance.attendanceObservations.every(x=>x.date.indexOf('2026-07-')===0));
+});
+
+test('rejects Attendance when its explicit month differs from selected Sales',()=>{
+  const row0=Array(42).fill('');row0[6]='Sat';row0[41]='month_start';const row1=Array(42).fill('');['RSM ID','RSM Name','TSO ID','TSO Name','SR ID','SR Name','1'].forEach((x,i)=>row1[i]=x);row1[41]='2026-08-01';
+  const context={config:SIP.Config.get(),diagnostics:new SIP.Diagnostics(),selectedSalesPeriod:{periodStart:'2026-07-01',periodEnd:'2026-07-31'}};
+  const result=SIP.AttendanceParser.parse({definition:{id:'SRC_ATTENDANCE',name:'Attendance'},values:[row0,row1,['1','R','2','T','3','S','P']]},context);
+  equal(result.attendanceObservations.length,0);ok(context.diagnostics.issues.some(x=>x.code==='ATTENDANCE_PERIOD_MISMATCH'));
+});
+
+test('strictly aligns operational KPIs to the selected Sales period',()=>{
+  const records=[];const add=(id,metric,value,period,extra={})=>records.push(SIP.Normalizer.masterRecord(Object.assign({recordId:id,sourceDataset:'T',sourceRecordId:id,contractId:'T',moduleId:'SALES',metricId:metric,eventDate:period+'-02',periodStart:period+'-01',numericValue:value,qualityStatus:'VALID',srId:'EMPLOYEE:1'},extra)));
+  add('S','SALES_AMOUNT',100,'2026-08');add('T','TARGET_AMOUNT',200,'2026-08',{recordType:'PLAN'});add('L','LIFTING_AMOUNT',70,'2026-08');add('C','COLLECTION_AMOUNT',90,'2026-07');add('P','PROJECTION_AMOUNT',80,'2026-07');
+  const attendance={periodStart:'2026-08-01',hrAttendance:true,entities:{'COMPANY|COMPANY:DEFAULT':{present:2,absent:1,attendancePct:2/3},'SR|EMPLOYEE:1':{present:2,absent:1,attendancePct:2/3}}};
+  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'PERIOD',currentPeriodStart:'2026-08-01',records,qualityFlags:[],attendance});
+  equal(snapshot.executive.sales,100);equal(snapshot.executive.target,200);equal(snapshot.executive.lifting,70);equal(snapshot.executive.collection,0);equal(snapshot.executive.projection,0);equal(snapshot.executive.salesPerPresentDay,50);equal(snapshot.quality.periodExcludedRecords,2);
+});
+
+test('keeps legacy generated hierarchy and relationship sheets as rollback archives',()=>{
+  const source=fs.readFileSync(path.join(root,'src','14b_PersistenceEngine.gs'),'utf8');
+  ok(source.includes('legacy generated sheet retained for rollback'));ok(!source.includes("replace(spreadsheet.getSheetByName(config.sheets.hierarchy),hierarchyHeaders"));ok(!source.includes("replace(spreadsheet.getSheetByName(config.sheets.relationships),relationshipHeaders"));
+});
+
 process.on('exit', () => {
   if (!process.exitCode) console.log(`\n${passed} tests passed.`);
 });

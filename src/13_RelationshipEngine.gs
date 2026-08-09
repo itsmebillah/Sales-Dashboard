@@ -15,6 +15,11 @@ SIP.RelationshipEngine = (function () {
     });
     var dealerCrosswalk = buildDealerCrosswalk(dimensions.dealers, diagnostics);
     var relationships = {}, hierarchy = {};
+    parsed.forEach(function(result){(result.hierarchyAssignments||[]).forEach(function(a){
+      var seed={period_start:a.effectiveFrom,period_end:a.effectiveTo,relationship_version:'1.0.0',source_record_id:'Hierarchy tab:'+a.sourceRow};
+      addHierarchy(hierarchy,'SR_TO_TSO',a.srId,a.tsoId,seed);addHierarchy(hierarchy,'TSO_TO_RSM',a.tsoId,a.rsmId,seed);addHierarchy(hierarchy,'RSM_TO_ASM',a.rsmId,a.asmId,seed);
+      addRelationship(relationships,'EMPLOYEE_SERVES_DEALER',a.srId,a.dealerId,seed);
+    });});
     parsed.forEach(function (result) {
       (result.records || []).forEach(function (r) {
         if (r.dealer_id && dealerCrosswalk[r.dealer_id]) r.dealer_id = dealerCrosswalk[r.dealer_id];

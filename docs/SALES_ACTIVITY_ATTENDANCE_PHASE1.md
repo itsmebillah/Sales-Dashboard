@@ -4,7 +4,10 @@ Release: 3.3.0
 
 ## Business meaning
 
-This is **Sales Activity Attendance**, not HR attendance.
+This document describes the fallback introduced in Phase 1. Release 3.7.0 reads
+the governed HR `Attendance` tab first; Sales Activity Attendance is used only
+when no valid HR observations are available. See
+`PHASE2_HIERARCHY_ATTENDANCE_IMPLEMENTATION.md`.
 
 For each SR and each elapsed working day defined by the official Calendar:
 
@@ -13,7 +16,7 @@ For each SR and each elapsed working day defined by the official Calendar:
 
 Weekly holidays, approved government holidays, future dates, and the current open day under `CLOSED_DAY_ONLY` do not produce attendance observations.
 
-The empty production worksheet named `Attendance` is reserved for a future HR source and is not read or written by this implementation.
+The production `Attendance` worksheet is now read by the HR Attendance provider.
 
 ## Canonical contract
 
