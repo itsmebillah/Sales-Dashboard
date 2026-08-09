@@ -105,7 +105,7 @@ async function main() {
   let filterAudit = null;
   if (process.env.FILTER_AUDIT === 'true') {
     filterAudit = await appFrame.evaluate(async () => {
-      const levels = ['ASM', 'RSM', 'TSO', 'SR', 'TERRITORY', 'AREA', 'DEALER', 'PRODUCT'];
+      const levels = ['ASM', 'RSM', 'TSO', 'TERRITORY', 'AREA', 'SR', 'DEALER', 'PRODUCT'];
       const results = [];
       for (const level of levels) {
         const select = document.getElementById('filter' + level);
@@ -122,7 +122,14 @@ async function main() {
       const disabled = ['DATE', 'REGION', 'CATEGORY'].reduce((out, name) => {
         out[name] = document.getElementById('filter' + name).disabled; return out;
       }, {});
-      return { levels: results, disabled, cascadingHierarchy: false };
+      const separation={
+        territoryRows:(BI.state.data.hierarchy.TERRITORY||[]).length,
+        areaRows:(BI.state.data.hierarchy.AREA||[]).length,
+        areaDisabled:document.getElementById('filterAREA').disabled,
+        regionNonBlankOptions:[...document.getElementById('filterREGION').options].filter(option=>option.value).length,
+        regionDisabled:document.getElementById('filterREGION').disabled
+      };
+      return { levels: results, disabled, separation, cascadingHierarchy: false };
     });
   }
 

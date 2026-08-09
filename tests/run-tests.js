@@ -98,7 +98,7 @@ test('detects dynamic headers and duplicate non-day headers', () => {
 function salesFixture() {
   const row1 = ['July\'26'];
   const row2 = [];
-  const row3 = Array(23).fill(''); row3[21] = 'Product A'; row3[22] = 'Product B';
+  const row3 = Array(52).fill(''); row3[21] = 'Product A'; row3[22] = 'Product B'; row3[50] = 'Monthly WD'; row3[51] = 26;
   const header = ['ID','RSM','TSO','SR','Designation','Dealer SL','AREA/ Point','DL_CD','1','2','3','Sales of July\'26','No. of Order','Current WD','July\'26 Monthly Tgt. Product Wise Value','SR Avg. Working Hour','Sales >June,26','Average Daily Outlet','','','','500ml','1L'];
   const data = ['3018','RSM One','TSO One','SR One','SR','137','M/S. Rupali Traders (137)','',100,200,0,300,4,3,1000,'5 Hr 30 Min',250,'','','','',2,3];
   return [row1,row2,row3,header,data];
@@ -371,6 +371,18 @@ test('enforces exact-number dashboard formatting and cache-only hydration', () =
   ok(source.includes("saved==='dark'?'dark':'light'"),'light mode must be the default application theme');
 });
 
+test('keeps Territory, Area, and Region as independent dashboard dimensions',()=>{
+  const index=fs.readFileSync(path.join(root,'src','html','Index.html'),'utf8'),filters=fs.readFileSync(path.join(root,'src','html','Filters.html'),'utf8'),hierarchy=fs.readFileSync(path.join(root,'src','08b_HierarchyParser.gs'),'utf8');
+  ok(index.includes('<span>Territory</span><select id="filterTERRITORY"'));
+  ok(!index.includes('<span>Territory / Area</span>'));
+  ok(filters.includes("levels:['ASM','RSM','TSO','TERRITORY','AREA','SR','DEALER','PRODUCT']"));
+  ok(filters.includes('region.disabled=true'));
+  ok(!filters.includes("level==='REGION'?'RSM':level"));
+  ok(!filters.includes('BI.state.data.hierarchy.RSM||[];region'));
+  ok(hierarchy.includes("['TERRITORY']"));
+  ok(!hierarchy.includes("['TERRITORY_AREA','TERRITORY']"));
+});
+
 test('uses CLOSED_DAY_ONLY with the approved three-day posting maturity lag', () => {
   const context={config:SIP.Config.get(),diagnostics:new SIP.Diagnostics(),ingestedAt:'2026-07-29T16:00:00Z'};
   const parsed=[{sourceId:'SRC_SALES_MONTHLY',records:[],metadata:{period:{periodStart:'2026-07-01',periodEnd:'2026-07-31'},monthlyWorkingDays:26}}];
@@ -466,6 +478,18 @@ test('blocks certification and cache publication for failed batches', () => {
   equal(gate.status,'NOT_CERTIFIED');
   let blocked=false;try{sandbox.publishDashboardApi({quality:{certification:'NOT_CERTIFIED'}});}catch(_){blocked=true;}
   ok(blocked,'uncertified dashboard publication must be blocked');
+});
+
+test('uses Sales Data Base Monthly AZ3 as the authoritative monthly working-day total',()=>{
+  const rows=salesFixture(),config=SIP.Config.get(),diagnostics=new SIP.Diagnostics(),context={config,diagnostics,batchId:'WD',ingestedAt:'2026-08-09T00:00:00Z'};
+  rows[0][0]="August'26";
+  const sales=SIP.SalesParser.parse({definition:{id:'SRC_SALES_MONTHLY',name:config.sheets.sales},values:rows},context);
+  equal(sales.metadata.monthlyWorkingDays,26);equal(sales.metadata.monthlyWorkingDaysSource,'Sales Data Base Monthly!AZ3');
+  sales.records.push({metric_id:'TOTAL_WORKING_DAYS',numeric_value:25});
+  const calendar=SIP.BusinessCalendar.build([sales],context,Object.assign({},config.calendar,{startYear:2026,endYear:2026,holidays:{}}));
+  equal(calendar.current.calendarDerivedTotal,27);equal(calendar.current.total,26);equal(calendar.current.sourceDeclaredTotal,26);
+  equal(calendar.current.workingDayAuthority,'Sales Data Base Monthly!AZ3');equal(calendar.current.remaining,calendar.current.total-calendar.current.elapsed);
+  ok(diagnostics.issues.some(x=>x.code==='CALENDAR_SOURCE_TOTAL_MISMATCH'&&x.context.authoritativeSource==='Sales Data Base Monthly!AZ3'));
 });
 
 test('records bounded refresh stages for production timeout diagnosis',()=>{

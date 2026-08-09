@@ -13,7 +13,7 @@ SIP.HierarchyParser=(function(){
       var dealer=N.dealer(C.value(row,header.columns,['DEALER_NAME']),C.value(row,header.columns,['DEALER_ID']));
       if(!sr.id||!tso.id||!rsm.id){continue;}
       [asm,rsm,tso,sr].forEach(function(e){if(e.id)dimensions.employees[e.id]=e;});if(dealer.id)dimensions.dealers[dealer.id]=dealer;
-      var territory=entity('TERRITORY',C.value(row,header.columns,['TERRITORY_AREA','TERRITORY']));
+      var territory=entity('TERRITORY',C.value(row,header.columns,['TERRITORY']));
       var area=entity('AREA',C.value(row,header.columns,['AREA']));
       if(territory.id)dimensions.territories[territory.id]=territory;if(area.id)dimensions.areas[area.id]=area;
       var status=U.canonicalText(C.value(row,header.columns,['STATUS']))||'ACTIVE';if(status!=='ACTIVE')continue;

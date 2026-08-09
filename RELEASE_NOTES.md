@@ -11,13 +11,17 @@
   single `Attendance!AP2` month marker follows the selected Sales start date.
 - Added Present, Absent, Attendance %, and Sales per present day to KPI contracts,
   filters, cards, and reports.
+- Kept Territory, Area, and Region independent. Territory is populated from its
+  governed source while unavailable Area/Region filters remain empty and disabled.
+- Made `Sales Data Base Monthly!AZ3` the authoritative monthly working-day total
+  for remaining-day, daily-pace, required-daily, and forecast calculations.
 - Added strict operational period alignment. July Collection/Projection cannot
   enter August KPIs; explicitly historical Sales remains available for trends.
 - Made target parsing month-independent.
 - Stopped rewriting redundant `Master Dataset`, legacy `Hierarchy`, and
   `Relationship Model` sheets. They remain unchanged as rollback archives while
   the compact runtime model is certified and cached.
-- Expanded regression coverage from 32 to 41 passing test groups, including a
+- Expanded regression coverage from 32 to 43 passing test groups, including a
   bounded refresh trace for production timeout diagnosis.
 
 ## 3.0.1 — Production Readiness Corrections

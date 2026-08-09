@@ -47,11 +47,11 @@ asm_id, rsm_id, tso_id, sr_id, dealer_id,
 territory_id, area_id, effective_from, effective_to, status
 ```
 
-ASM is stored. Territory/Area is derived from the same Dealer in current-period
-Dealer Lifting when available. Effective From/To defaults to the selected Sales
-month, and Status defaults to ACTIVE. Optional columns with those names are
-supported if the business later needs exceptions. This avoids repeating the
-same month/status hundreds of times.
+ASM is stored. Territory is independently derived from the same Dealer in
+current-period Dealer Lifting when available. Area is a separate dimension and
+remains empty because no valid Area source currently exists. Effective From/To
+defaults to the selected Sales month, and Status defaults to ACTIVE. Optional
+columns with those names are supported if the business later needs exceptions.
 
 The live source currently reuses several SR IDs on stale rows. Where one SR has
 multiple manager paths, the assignment matching the selected-month Sales dealer
@@ -77,15 +77,17 @@ blocks certification.
 | version | application schema | Derived | cache compatibility |
 
 Phone fields are not required by the dashboard. The source Growth Rate and the
-large employee-level legacy output are redundant. Territory/Area remains null
-only when no governed source supplies it.
+large employee-level legacy output are redundant. Territory remains null when
+no governed source supplies it, and Area is never copied or aliased from
+Territory.
 
 ## Attendance model
 
 The parser reads stable RSM/TSO/SR IDs, day columns, and the single month marker.
 Every nonblank P/A cell becomes an in-memory observation with a real ISO date.
 The join key is exactly `sr_id + attendance_date`. The provider aggregates those
-observations for Company, ASM, RSM, TSO, SR, Dealer, and available Territory/Area.
+observations for Company, ASM, RSM, TSO, SR, Dealer, available Territory, and an
+independent Area dimension when a real Area source is introduced.
 An explicit mismatch between Attendance month and selected Sales month is a
 blocking data-quality error; the system never silently combines the periods.
 
@@ -94,17 +96,21 @@ blocking data-quality error; the system never silently combines the periods.
 - Sales, target, achievement, gap, forecast, daily pace, orders, and product mix
 - Lifting, stock, secondary, Collection, and Projection when their period equals
   the selected Sales period
-- ASM, RSM, TSO, SR, Dealer, Product, and available Territory/Area filters/reports
+- ASM, RSM, TSO, Territory, Area, SR, Dealer, and Product filters/reports
 - Present, Absent, Attendance %, Sales versus Attendance, and Sales per present
   day where at least one present day exists
 - Dynamic growth from comparable historical Sales; never from hierarchy data
+- Total working days read from `Sales Data Base Monthly!AZ3`; current elapsed
+  days remain calendar/cutoff-based, and all remaining-day and run-rate formulas
+  use the authoritative source total
 
 ## Remaining gaps
 
 - Monthly Projection currently contains July 2026 only, so August Collection and
   Projection correctly show zero/unavailable instead of reusing July values.
-- Territory/Area coverage depends on a matching current-period Dealer Lifting
-  record or an optional maintained hierarchy field.
+- Territory coverage depends on a matching current-period Dealer Lifting record
+  or an optional maintained Territory field. Area remains empty until an
+  independent, governed Area source is introduced.
 - Historical Attendance requires historical Attendance sources; current
   Attendance is never relabeled as a different selected month.
 - Business-owner sign-off is still required for target, currency, Collection,

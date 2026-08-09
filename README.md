@@ -6,7 +6,7 @@ Governed sales analytics from heterogeneous Google Sheets data to a secure execu
 
 [![Version](https://img.shields.io/badge/version-3.7.0-0f766e?style=flat-square)](RELEASE_NOTES.md)
 [![Status](https://img.shields.io/badge/status-active-15803d?style=flat-square)](IMPLEMENTATION_ROADMAP.md)
-[![Tests](https://img.shields.io/badge/tests-41%20passing-15803d?style=flat-square)](tests/run-tests.js)
+[![Tests](https://img.shields.io/badge/tests-43%20passing-15803d?style=flat-square)](tests/run-tests.js)
 [![Platform](https://img.shields.io/badge/platform-Apps%20Script%20HTML%20Service-111827?style=flat-square)](#technology-stack)
 
 [Live Dashboard](https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Release Notes](RELEASE_NOTES.md)
@@ -29,7 +29,7 @@ The project is built for business teams that need spreadsheet accessibility with
 - Strict selected-period alignment for operational Sales, Target, Lifting, Collection, and Projection facts
 - Sales, target, collection, projection, lifting, inventory, dealer, and product views
 - Working-day forecasts, confidence inputs, risks, and deterministic insights
-- Identical KPI contracts at company, ASM, RSM, TSO, SR, territory/area, dealer, and product levels
+- Identical KPI contracts at company, ASM, RSM, TSO, SR, Territory, Area, dealer, and product levels; missing Area/Region sources remain empty rather than being aliased
 - Cache-only dashboard hydration that cannot trigger source parsing
 - Responsive Apps Script HTML Service dashboard with controlled live refresh
 

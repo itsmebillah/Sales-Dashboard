@@ -60,7 +60,7 @@ SIP.SalesParser = (function () {
       loaded++;
     }
     var s = diag.source(id); s.rowsLoaded = loaded; s.rowsIgnored = ignored; s.recordsEmitted = records.length; s.executionMs += Date.now() - started;
-    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, dailyColumns: days, productColumns: productMeta, monthlyWorkingDays: monthlyWorkingDays(rows, header.rowIndex), salesControlTotal:controlTotal(rows) } };
+    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, dailyColumns: days, productColumns: productMeta, monthlyWorkingDays: monthlyWorkingDays(rows), monthlyWorkingDaysSource:'Sales Data Base Monthly!AZ3', salesControlTotal:controlTotal(rows) } };
   }
 
   function baseRecord(context, source, row, rowIndex, period, employee, dealer, columns) {
@@ -125,13 +125,9 @@ SIP.SalesParser = (function () {
     var targetIndex=findSuffix(header.keys,'MONTHLY_TGT_PRODUCT_WISE_VALUE');if(targetIndex>=0)indexes.push(targetIndex);
     return !indexes.some(function(index){var value=U.number(row[index],context.config.parser.blankTokens);return value!==null&&value!==0;});
   }
-  function monthlyWorkingDays(rows, headerIndex) {
-    for(var r=0;r<headerIndex;r++)for(var c=0;c<(rows[r]||[]).length;c++){
-      if(U.canonicalText(rows[r][c]).indexOf('MONTHLY_WD')>=0){
-        for(var n=c+1;n<Math.min(c+4,rows[r].length);n++){var value=U.number(rows[r][n],[]);if(value!==null&&value>0&&value<=31)return value;}
-      }
-    }
-    return null;
+  function monthlyWorkingDays(rows) {
+    var label=rows[2]&&U.headerKey(rows[2][50]),value=rows[2]&&U.number(rows[2][51],[]);
+    return label==='MONTHLY_WD'&&value!==null&&value>0&&value<=31?value:null;
   }
   function controlTotal(rows) {
     var value=rows[1]&&U.number(rows[1][13],[]);
