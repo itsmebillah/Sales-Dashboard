@@ -1,5 +1,7 @@
 # Phase 2 Data Audit, KPI Validation and Forecast Certification
 
+> Historical certification snapshot for the batch named below. Its `NOT CERTIFIED` decision is not the current production status. See [../RELEASE_NOTES.md](../RELEASE_NOTES.md), [SYSTEM_AUDIT_3.6.0.md](SYSTEM_AUDIT_3.6.0.md), and [README.md](README.md).
+
 Audit date: 2026-07-29  
 Production spreadsheet: `1HxVEJqWqIc_xSGIBYJpJBIuHeqTaQiUUJ_Lc7jLKlSY`  
 Production Script ID: `1H88OzmYKwSNSOx8X4K_seVPZkP8xB7EOMUciAdClS5qLEF1s04gyr7oi`  

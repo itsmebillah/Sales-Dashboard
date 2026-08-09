@@ -4,6 +4,10 @@
   "private": true,
   "scripts": {
     "test": "node tests/run-tests.js",
-    "check": "node tests/run-tests.js"
+    "check": "node tests/run-tests.js",
+    "audit:production": "node tests/production-browser-audit.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.62.1"
   }
 }

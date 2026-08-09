@@ -1,5 +1,7 @@
 # Implementation Roadmap
 
+> The phase sequence below is retained as the original delivery plan. Current production status is summarized here and in [README.md](README.md), [RELEASE_NOTES.md](RELEASE_NOTES.md), and [docs/README.md](docs/README.md).
+
 ## Current delivery status
 
 - Phase 1 — Discovery and data audit: complete.
@@ -8,9 +10,11 @@
 - Phase 4 — KPI and Business Calculation Engine: implemented; deterministic
   tests, performance benchmark, governed metric-registry update, and deployment
   verification are recorded in the Phase 4 release documents.
-- Dashboard implementation remains unstarted and requires explicit approval.
+- Phase 5 — Apps Script HTML Service dashboard: implemented and deployed.
+- Phase 6 — Canonical hierarchy, HR Attendance, strict period alignment,
+  source working days, and corrected Momentum semantics: implemented and deployed.
 
-This roadmap is a design handoff only. No implementation is included.
+The remaining sections document the original gates and exit criteria; they are not a statement that current production work is incomplete.
 
 ## Gate 0 — Audit approval
 

@@ -1,5 +1,14 @@
 # Release Notes
 
+## Repository Governance — 2026-08-09
+
+- Consolidated the complete v3.7.0 production history onto the canonical `main` branch.
+- Rewrote the repository entrypoint around the sole Apps Script production runtime, actual Sheet sources, Git-to-clasp workflow, access requirements, and versioned deployment command.
+- Added a documentation authority index, marked superseded deployment guidance, and labeled old audit/readiness decisions as dated evidence.
+- Removed four superseded screenshots that had no documentation or runtime references.
+- Declared and locked the `playwright-core` development dependency used by the tracked production browser audit; the application runtime remains dependency-free.
+- Reverified 44 regression groups, exact Apps Script source/manifest parity, and the live certified dashboard without changing Sheet data or the deployed runtime.
+
 ## 3.7.0 — Canonical Hierarchy, HR Attendance, and Period Safety
 
 - Made `Hierarchy tab` the canonical hierarchy provider for stable ASM, RSM,

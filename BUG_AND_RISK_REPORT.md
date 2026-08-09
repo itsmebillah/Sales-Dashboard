@@ -1,5 +1,7 @@
 # Bug and Risk Report
 
+> Historical discovery record from 2026-07-28. It predates the implemented and certified production system. Use [README.md](README.md), [RELEASE_NOTES.md](RELEASE_NOTES.md), and [docs/README.md](docs/README.md) for current status.
+
 No application code was tested in Phase 1. “Bug” below means a verified data/design defect or a high-confidence failure mode, not a diagnosed software defect.
 
 | Severity | Finding | Impact | Recommended control |

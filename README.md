@@ -1,21 +1,25 @@
-# Sales Intelligence Platform
+# Sales Dashboard
 
-Governed sales analytics from heterogeneous Google Sheets data to a secure executive dashboard.
+Production sales analytics from governed Google Sheets data to an Apps Script executive dashboard.
 
 ![Sales Intelligence Platform social preview](assets/social-preview/sales-intelligence-platform-social-preview.png)
 
 [![Version](https://img.shields.io/badge/version-3.7.0-0f766e?style=flat-square)](RELEASE_NOTES.md)
-[![Status](https://img.shields.io/badge/status-active-15803d?style=flat-square)](IMPLEMENTATION_ROADMAP.md)
+[![Status](https://img.shields.io/badge/status-production-15803d?style=flat-square)](docs/ADR-008-CACHE-ONLY-HTML-SERVICE-RUNTIME.md)
 [![Tests](https://img.shields.io/badge/tests-44%20passing-15803d?style=flat-square)](tests/run-tests.js)
 [![Platform](https://img.shields.io/badge/platform-Apps%20Script%20HTML%20Service-111827?style=flat-square)](#technology-stack)
 
-[Live Dashboard](https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Release Notes](RELEASE_NOTES.md)
+[Live Dashboard](https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Documentation Index](docs/README.md) | [Release Notes](RELEASE_NOTES.md)
 
-## Overview
+## Project
 
 The Sales Intelligence Platform turns operational sales, target, lifting, and related source sheets into a governed analytical model. Its Apps Script backend detects changing source headers, normalizes records, validates data quality, resolves business relationships, publishes a checksummed master dataset, and calculates deterministic KPIs. The production dashboard is an Apps Script HTML Service Web App that reads only the certified KPI cache during initial loading.
 
 The project is built for business teams that need spreadsheet accessibility without allowing report logic, changing row positions, or ad hoc formulas to become the system of record.
+
+## Production
+
+The [Apps Script HTML Service Web App](https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec) is the only supported production dashboard. It runs from the sheet-bound Apps Script project `1H88OzmYKwSNSOx8X4K_seVPZkP8xB7EOMUciAdClS5qLEF1s04gyr7oi` and reads the certified KPI cache. Vercel, Next.js, and standalone Apps Script hosts are retired and are not deployment targets.
 
 ## Product Capabilities
 
@@ -59,6 +63,22 @@ The architectural invariant is simple: parsers are the only ingestion readers, t
 
 Read [CORE_PLATFORM_ARCHITECTURE.md](CORE_PLATFORM_ARCHITECTURE.md) and the architecture decision records in [`docs`](docs) for the full contract.
 
+## Data Sources
+
+The production spreadsheet is `1HxVEJqWqIc_xSGIBYJpJBIuHeqTaQiUUJ_Lc7jLKlSY`. The ingestion layer reads these business tabs by name:
+
+| Tab | Role |
+| --- | --- |
+| `Sales Data Base Monthly` | Current selected-month Sales and Target facts; `AZ3` is the authoritative working-day total for that reporting month |
+| `Previous Month Sales` | Optional comparable prior-period Sales |
+| `Dealer lifting` | Dealer lifting facts |
+| `Monthly Projection` | Collection and Projection facts |
+| `Hierarchy tab` | Canonical ASM/RSM/TSO/Territory/SR/Dealer hierarchy; Area remains independent and empty without a real source |
+| `Attendance` | HR attendance joined by SR ID and explicit attendance date |
+| `Configuration` and `Holiday` | Business-calendar policy and approved holidays |
+
+The generated `Master Dataset`, `Relationship Model`, and legacy `Hierarchy` sheets are not source-of-truth inputs. The legacy hierarchy is retained only as a rollback archive.
+
 ## Technology Stack
 
 | Layer | Technology |
@@ -81,21 +101,46 @@ appsscript.json        Apps Script runtime and OAuth scope manifest
 *.md                   Business dictionaries, specifications, audits, and roadmap
 ```
 
-## Local Verification
+## Development
 
-### Backend
+The delivery path is `local Git -> GitHub main -> clasp -> bound Apps Script project -> versioned Web App deployment`. Feature branches may be used for review, but production releases must be contained in `main` before clasp deployment.
 
 ```powershell
 git clone https://github.com/itsmebillah/Sales-Dashboard.git
 Set-Location Sales-Dashboard
+npm ci
 npm test
 ```
 
 The suite covers parsing, normalization, hierarchy migration, Attendance month/date joins, target parsing, period alignment, relationship resolution, validation, cache integrity, KPI contracts, risk rules, generation consistency, and a 100,000-observation performance budget.
 
+The optional live audit uses the locally installed Chrome or Edge executable and does not download a browser:
+
+```powershell
+$env:PRODUCTION_WEB_APP_URL='https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec'
+$env:BROWSER_EXECUTABLE='C:\Program Files\Google\Chrome\Application\chrome.exe'
+$env:RUN_INTERACTIONS='true'
+$env:FILTER_AUDIT='true'
+npm run audit:production
+```
+
 ## Deployment
 
 The production Apps Script project is bound to the private source spreadsheet and deployed as a public HTML Service Web App that executes as the deployer. The browser never receives the spreadsheet or raw records. Initial load calls only the certified KPI cache; explicit refresh runs the Data Engine once, recalculates KPIs from that Master Dataset, and republishes the cache. See [ADR-008](docs/ADR-008-CACHE-ONLY-HTML-SERVICE-RUNTIME.md).
+
+Deploy only a reviewed, clean `main` checkout:
+
+```powershell
+git switch main
+git pull --ff-only
+npm test
+npx --yes @google/clasp@latest push
+npx --yes @google/clasp@latest version "release summary"
+npx --yes @google/clasp@latest deploy --deploymentId AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ --versionNumber <VERSION> --description "release summary"
+npx --yes @google/clasp@latest deployments
+```
+
+The deployer must be signed into clasp with edit access to the bound Apps Script project. Deployment and refresh operations require the manifest's spreadsheet and script scopes. Never commit clasp credentials, OAuth tokens, Sheet exports, or production data.
 
 ## Known Limitations
 

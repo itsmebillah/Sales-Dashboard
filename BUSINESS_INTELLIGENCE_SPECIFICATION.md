@@ -1,5 +1,7 @@
 # Business Intelligence Specification
 
+> Historical design baseline from 2026-07-28. Its approval status describes that design phase, not the current production release. See [README.md](README.md), [RELEASE_NOTES.md](RELEASE_NOTES.md), and [docs/README.md](docs/README.md).
+
 Version: Phase 2 design, 2026-07-28  
 Status: Awaiting approval; no implementation authorized
 

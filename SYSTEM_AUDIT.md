@@ -1,5 +1,7 @@
 # Sales Intelligence Platform — System Audit
 
+> Historical discovery snapshot from 2026-07-28. The workbook and application have changed substantially since this audit. See [README.md](README.md), [RELEASE_NOTES.md](RELEASE_NOTES.md), and [docs/README.md](docs/README.md) for the current production state.
+
 Audit date: 2026-07-28  
 Phase: Discovery only  
 Audited workbook: `Sales Dashboard` (`1HxVEJqWqIc_xSGIBYJpJBIuHeqTaQiUUJ_Lc7jLKlSY`)

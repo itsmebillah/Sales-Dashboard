@@ -2,8 +2,8 @@
 
 ## Phase 4 implementation contract
 
-The authoritative calculation source is `SIP.KpiEngine` v1.0.0. Every entity
-level—Company, RSM, TSO, SR, Dealer and Product—returns the same KPI contract.
+The authoritative calculation source is `SIP.KpiEngine` v1.0.0. Every supported entity
+level—Company, ASM, RSM, TSO, Territory, Area, SR, Dealer and Product—returns the same KPI contract. Area remains empty until a distinct Area source is governed; Territory is never aliased into Area.
 Aggregation is performed once from accepted Master Dataset records; modules do
 not recalculate formulas independently.
 
@@ -11,7 +11,7 @@ Implemented baseline fields include Sales, Target, Achievement, Gap, forecast,
 forecast achievement, required/average daily Sales, working days, entity counts,
 Collection, Projection, Lifting, Stock, Secondary, orders, comparable growth,
 momentum, Collection flow ratio, product volume/mix, rank, contribution, trend,
-forecast inputs and certification state.
+forecast inputs, Present/Absent days, Attendance %, Sales per present day, and certification state.
 
 Growth is deliberately `null` until the current period is comparable with the
 closed historical period. This prevents MTD Sales from being misrepresented as
@@ -69,7 +69,7 @@ Notation: `A` actual Sales, `T` monthly Target, `WD_e` elapsed working days, `WD
 
 ## Hierarchy performance
 
-These apply independently at RSM, TSO, SR, dealer, area and depot where the fact relationship exists.
+These apply independently at ASM, RSM, TSO, Territory, Area, SR, Dealer, Product, and Depot where a governed fact relationship exists.
 
 | KPI | Definition | Availability |
 |---|---|---|
@@ -163,6 +163,6 @@ These apply independently at RSM, TSO, SR, dealer, area and depot where the fact
 | Reconciliation Variance | Parsed atomic total - source reported total | Available in Phase 3 |
 | Data Quality Score | Weighted completeness, validity, uniqueness, mapping, freshness | Requires approved weights |
 
-## Future Attendance KPIs
+## Attendance KPIs
 
-Attendance rate, present/absent/leave days, late arrival, worked hours, field-day utilization, Sales per present day, Sales per worked hour, orders per present day, dealer coverage per present day, attendance-adjusted target pace, absenteeism impact and manager team attendance. These require an employee-date attendance fact and privacy-approved policies.
+Present days, Absent days, Attendance %, and Sales per present day are implemented from HR Attendance joined by stable SR ID plus explicit attendance date. The Attendance reporting month is always the selected Sales month. Leave, late arrival, worked hours, field-day utilization, Sales per worked hour, attendance-adjusted target pace, absenteeism impact, and manager team attendance remain conditional on governed source fields and privacy-approved policies.

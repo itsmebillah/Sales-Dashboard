@@ -1,7 +1,9 @@
 # ADR-004: Isolated Apps Script Host
 
-Status: Accepted  
+Status: Superseded by [ADR-007](ADR-007-SHEET-BOUND-PRODUCTION-BACKEND.md)
 Date: 2026-07-28
+
+This record explains a temporary publication path. It is not a current deployment instruction; production is the original sheet-bound project defined by ADR-007 and ADR-008.
 
 ## Context
 

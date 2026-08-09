@@ -1,5 +1,7 @@
 # Phase 3 Verification Record
 
+> Historical verification record. The deployment ID below is retired; current production is defined by [ADR-007](ADR-007-SHEET-BOUND-PRODUCTION-BACKEND.md), [ADR-008](ADR-008-CACHE-ONLY-HTML-SERVICE-RUNTIME.md), and [../README.md](../README.md).
+
 Date: 2026-07-28
 
 ## Automated coverage

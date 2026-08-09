@@ -1,5 +1,7 @@
 # Phase 2.5 — P0 Production Remediation Report
 
+> Historical remediation checkpoint. Its readiness decision applies only to the release and trigger state recorded below; see [README.md](README.md), [../RELEASE_NOTES.md](../RELEASE_NOTES.md), and [SYSTEM_AUDIT_3.6.0.md](SYSTEM_AUDIT_3.6.0.md) for later production evidence.
+
 ## Release 3.3.0 extension — P0-2
 
 The official Calendar now spans 2025–2032, reads approved holidays from the governed `Holiday` worksheet, applies a six-day week with Friday closed and Saturday working, and exposes fiscal periods. Sales Activity Attendance is derived from valid sales only through a replaceable provider contract and is explicitly not HR attendance. See `BUSINESS_CALENDAR_IMPLEMENTATION.md` and `SALES_ACTIVITY_ATTENDANCE_PHASE1.md`.
