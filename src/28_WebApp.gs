@@ -28,6 +28,9 @@ function refreshDashboardData() {
 
 function runDataEngine(){return SIP.DataEngine.run({writeDiagnostics:true});}
 
+/** Read-only production refresh progress for timeout diagnostics. */
+function getRefreshTrace(){return SIP.RefreshTrace.get();}
+
 /** One-time owner authorization and private Sheet connectivity check. */
 function authorizeProduction() {
   var config=SIP.Config.get(),spreadsheet=SpreadsheetApp.openById(config.spreadsheetId);

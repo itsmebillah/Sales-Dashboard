@@ -10,34 +10,49 @@ SIP.DataEngine = (function () {
       ingestedAt: SIP.Utils.nowIso(),
       batchId: options.batchId || SIP.Utils.uniqueId('BATCH', [SIP.Utils.nowIso(), SIP.VERSION])
     };
+    SIP.RefreshTrace.begin(context.batchId);
     var lock = getLock();
     if (lock && !lock.tryLock(options.lockTimeoutMs || 5000)) throw new Error('Another data-engine build is already running');
     try {
       var spreadsheet = options.spreadsheet || openSpreadsheet(config);
       var sources = SIP.SourceReader.readAll(spreadsheet, config, diagnostics);
+      SIP.RefreshTrace.mark('SOURCES_READ');
       var parsed = SIP.ParserEngine.parseAll(sources, context);
+      SIP.RefreshTrace.mark('SOURCES_PARSED');
       var hierarchyProvider=SIP.HierarchyProvider.apply(parsed,diagnostics,context);
+      SIP.RefreshTrace.mark('HIERARCHY_APPLIED',hierarchyProvider);
       var relationships = SIP.RelationshipEngine.build(parsed, diagnostics);
+      SIP.RefreshTrace.mark('RELATIONSHIPS_BUILT',{hierarchy:relationships.hierarchy.length,relationships:relationships.relationships.length});
       var validation = SIP.ValidationEngine.validate(parsed, context);
+      SIP.RefreshTrace.mark('VALIDATED',{records:validation.records.length});
       var calendarSettings=SIP.BusinessCalendar.loadSettings(spreadsheet,config);
       var calendar = SIP.BusinessCalendar.build(parsed,context,calendarSettings);
+      SIP.RefreshTrace.mark('CALENDAR_BUILT');
       var attendance=SIP.HrAttendance.build(parsed,context)||SIP.SalesActivityAttendance.resolve(validation,relationships,calendar,context,options.attendanceProvider);
+      SIP.RefreshTrace.mark('ATTENDANCE_BUILT',{type:attendance.attendanceType||attendance.type,observations:attendance.observationCount||0});
       if(attendance.records.length)validation.records=validation.records.concat(attendance.records);
       var master = SIP.MasterDatasetBuilder.build(validation, relationships, parsed, context,calendar);
+      SIP.RefreshTrace.mark('MASTER_BUILT',{records:master.records.length});
       master.currentPeriodStart=context.selectedSalesPeriod&&context.selectedSalesPeriod.periodStart||'';
       master.hierarchyProvider=hierarchyProvider;
       master.attendance={status:'ACTIVE',type:attendance.attendanceType||attendance.type,statusSource:attendance.statusSource,providerContract:attendance.providerContract,hrAttendance:!!attendance.hrAttendance,periodStart:attendance.periodStart||master.currentPeriodStart,periodEnd:attendance.periodEnd||'',employeeCount:attendance.employeeCount,workingDays:attendance.workingDays,present:attendance.present,absent:attendance.absent,attendancePct:attendance.attendancePct,observationCount:attendance.observationCount||0,entities:attendance.entities||{}};
       master.reconciliation=SIP.ReconciliationEngine.calculate(parsed,config,diagnostics);
+      SIP.RefreshTrace.mark('RECONCILED');
       var persistence=SIP.PersistenceEngine.persist(spreadsheet,master,config);
+      SIP.RefreshTrace.mark('PERSISTED');
       master.persistence=persistence;
       master.certification=SIP.CertificationEngine.assess(master,diagnostics,persistence);
+      SIP.RefreshTrace.mark('CERTIFIED',{certified:master.certification.certified});
       var cacheResult = options.skipCache||!master.certification.certified ? { cached: false, reason: options.skipCache?'SKIPPED':'NOT_CERTIFIED' } : SIP.CacheEngine.put(master, config, diagnostics);
+      SIP.RefreshTrace.mark('MASTER_CACHE_FINISHED',{cached:cacheResult.cached,chunks:cacheResult.chunks||0});
       var finalDiagnostics = diagnostics.finish();
       master.diagnostics = finalDiagnostics;
       if (options.writeDiagnostics !== false) SIP.DiagnosticsWriter.write(spreadsheet, context, finalDiagnostics, cacheResult);
+      SIP.RefreshTrace.mark('COMPLETE',{certified:master.certification.certified});
       return { master: master, diagnostics: finalDiagnostics, cache: cacheResult, persistence:persistence, certification:master.certification };
     } catch (error) {
       diagnostics.issue('ERROR', 'ENGINE_FATAL', error.message, { stack: error.stack || '' });
+      SIP.RefreshTrace.mark('FAILED',{message:error.message});
       throw error;
     } finally { if (lock) lock.releaseLock(); }
   }

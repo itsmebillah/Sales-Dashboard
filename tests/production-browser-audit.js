@@ -35,10 +35,15 @@ async function main() {
     }));
   }
 
+  let refreshError = null;
   if (process.env.TRIGGER_REFRESH === 'true') {
     var refreshStarted = Date.now();
     await appFrame.locator('#refreshButton').click();
-    await appFrame.locator('#refreshButton:not([disabled])').waitFor({ timeout: 360000 });
+    try {
+      await appFrame.locator('#refreshButton:not([disabled])').waitFor({ timeout: 330000 });
+    } catch (error) {
+      refreshError = error.message;
+    }
     var refreshWallMs = Date.now() - refreshStarted;
   } else {
     await appFrame.waitForFunction(() => document.getElementById('statusTitle').textContent !== 'Loading certified dashboard', null, { timeout: 120000 });
@@ -65,6 +70,10 @@ async function main() {
     google.script.run.withSuccessHandler(value=>{clearTimeout(timer);resolve(value);}).withFailureHandler(error=>{clearTimeout(timer);reject(error);}).getDashboardApi('health');
   }));
   const cacheProbeWallMs = Date.now() - cacheProbeStarted;
+  const refreshTrace = await appFrame.evaluate(() => new Promise((resolve, reject) => {
+    const timer=setTimeout(()=>reject(new Error('Refresh trace RPC timed out')),30000);
+    google.script.run.withSuccessHandler(value=>{clearTimeout(timer);resolve(value);}).withFailureHandler(error=>{clearTimeout(timer);reject(error);}).getRefreshTrace();
+  }));
   const renderTimings = await appFrame.evaluate(() => {
     const now = () => performance.now();
     let started = now(); BI.Charts.renderAll(BI.state.scope || BI.state.data.executive); const chartMs = now() - started;
@@ -96,7 +105,7 @@ async function main() {
   let filterAudit = null;
   if (process.env.FILTER_AUDIT === 'true') {
     filterAudit = await appFrame.evaluate(async () => {
-      const levels = ['RSM', 'TSO', 'SR', 'DEALER', 'PRODUCT'];
+      const levels = ['ASM', 'RSM', 'TSO', 'SR', 'TERRITORY', 'AREA', 'DEALER', 'PRODUCT'];
       const results = [];
       for (const level of levels) {
         const select = document.getElementById('filter' + level);
@@ -142,15 +151,20 @@ async function main() {
         secondary: x.secondary, productVolume: x.productVolume, dealerCount: x.dealerCount,
         srCount: x.srCount, tsoCount: x.tsoCount, rsmCount: x.rsmCount, productCount: x.productCount,
         growthPct: x.growthPct, growthComparable: x.growthComparable, momentumPct: x.momentumPct,
+        present: x.present, absent: x.absent, attendancePct: x.attendancePct,
+        salesPerPresentDay: x.salesPerPresentDay, attendancePeriodStart: x.attendancePeriodStart,
         forecastBase: x.forecastBase
       };
     }),
+    attendance: await appFrame.evaluate(() => BI.state.data && BI.state.data.attendance || null),
     cachePerformance: await appFrame.evaluate(() => BI.state.data && BI.state.data.performance || null),
+    refreshTrace,
     measuredPerformance: {
       dashboardReadyMs: Date.now() - auditStarted,
       cacheProbeWallMs,
       cacheServerResponseMs: cacheHealth && cacheHealth.data && cacheHealth.data.responseMs,
       refreshWallMs: typeof refreshWallMs === 'number' ? refreshWallMs : null,
+      refreshError,
       chartRenderMs: renderTimings.chartMs,
       filterResponseMs: renderTimings.filterMs,
       reportRenderMs: renderTimings.reportMs

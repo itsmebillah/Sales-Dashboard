@@ -17,7 +17,8 @@
 - Stopped rewriting redundant `Master Dataset`, legacy `Hierarchy`, and
   `Relationship Model` sheets. They remain unchanged as rollback archives while
   the compact runtime model is certified and cached.
-- Expanded regression coverage from 32 to 40 passing test groups.
+- Expanded regression coverage from 32 to 41 passing test groups, including a
+  bounded refresh trace for production timeout diagnosis.
 
 ## 3.0.1 — Production Readiness Corrections
 

@@ -468,6 +468,11 @@ test('blocks certification and cache publication for failed batches', () => {
   ok(blocked,'uncertified dashboard publication must be blocked');
 });
 
+test('records bounded refresh stages for production timeout diagnosis',()=>{
+  properties.clear();SIP.RefreshTrace.begin('TRACE_BATCH');SIP.RefreshTrace.mark('ATTENDANCE_BUILT',{observations:3});const trace=SIP.RefreshTrace.get();
+  equal(trace.batchId,'TRACE_BATCH');equal(trace.stage,'ATTENDANCE_BUILT');equal(trace.detail.observations,3);equal(trace.complete,false);
+});
+
 test('parses dynamic monthly targets without a hardcoded month name',()=>{
   const rows=salesFixture().map(row=>row.slice());rows[0][0]="August'26";rows[3][11]="Sales of August'26";rows[3][14]="August'26 Monthly Tgt. Product Wise Value";
   const config=SIP.Config.get(),diagnostics=new SIP.Diagnostics(),context={config,diagnostics,batchId:'TARGET',ingestedAt:'2026-08-09T00:00:00Z'};
