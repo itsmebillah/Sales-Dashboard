@@ -18,6 +18,8 @@
 - Corrected Momentum to compare equal matured working-day windows through the
   governed cutoff. Its percentage and Up/Down/Flat direction now come from the
   same result instead of mixing daily momentum with the historical monthly trend.
+  Approved Sheet holiday dates are normalized in the configured business
+  timezone so local-midnight dates cannot shift to the preceding UTC day.
 - Added strict operational period alignment. July Collection/Projection cannot
   enter August KPIs; explicitly historical Sales remains available for trends.
 - Made target parsing month-independent.

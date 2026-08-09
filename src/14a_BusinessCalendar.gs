@@ -14,7 +14,7 @@ SIP.BusinessCalendar = (function () {
       settings.postingLagDays=Number(map.SALES_POSTING_LAG_DAYS||settings.postingLagDays||3);
       settings.monthCloseDay=Number(map.MONTH_CLOSE_DAY||settings.monthCloseDay||4);
     }
-    settings.holidays=readHolidays(spreadsheet.getSheetByName(config.sheets.holidays),settings.holidayApprovalStatus);
+    settings.holidays=readHolidays(spreadsheet.getSheetByName(config.sheets.holidays),settings.holidayApprovalStatus,settings.timezone);
     if(settings.startYear>settings.endYear)throw new Error('Calendar start year must not exceed end year');
     return settings;
   }
@@ -37,7 +37,7 @@ SIP.BusinessCalendar = (function () {
     return {policy:settings.cutoffPolicy,asOfDate:asOf,dataCutoffDate:cutoffDate,settings:{startYear:settings.startYear,endYear:settings.endYear,weekendDays:settings.weekendDays,workingWeekDays:settings.workingWeekDays,fiscalStartMonth:settings.fiscalStartMonth,postingLagDays:settings.postingLagDays,monthCloseDay:settings.monthCloseDay},holidaySummary:{approved:Object.keys(holidayMap).length},rows:rows,current:{periodStart:currentPeriod?currentPeriod.periodStart:'',periodEnd:currentPeriod?currentPeriod.periodEnd:'',dataCutoffDate:cutoffDate,closeDate:closeDate,isClosed:!!closeDate&&asOf>=closeDate,elapsed:elapsed,remaining:remaining,total:total,monthLength:currentRows.length,calendarDerivedTotal:calendarTotal,sourceDeclaredTotal:declared||null,workingDayAuthority:declared?'Sales Data Base Monthly!AZ3':'BUSINESS_CALENDAR_FALLBACK'},verified:!!currentPeriod&&rows.length>0&&total>0&&elapsed<=total&&remaining===total-elapsed};
   }
 
-  function readHolidays(sheet,approvedStatus){var out={};if(!sheet)return out;var values=sheet.getDataRange().getValues(),header=(values[0]||[]).map(U.headerKey),dateIndex=header.indexOf('HOLIDAY_DATE'),nameIndex=header.indexOf('HOLIDAY_NAME'),statusIndex=header.indexOf('APPROVAL_STATUS');values.slice(1).forEach(function(r){var date=U.isoDate(r[dateIndex]),status=U.canonicalText(r[statusIndex]);if(date&&status===approvedStatus)out[date]={name:U.text(r[nameIndex]),status:status};});return out;}
+  function readHolidays(sheet,approvedStatus,timezone){var out={};if(!sheet)return out;var values=sheet.getDataRange().getValues(),header=(values[0]||[]).map(U.headerKey),dateIndex=header.indexOf('HOLIDAY_DATE'),nameIndex=header.indexOf('HOLIDAY_NAME'),statusIndex=header.indexOf('APPROVAL_STATUS');values.slice(1).forEach(function(r){var raw=r[dateIndex],date=raw instanceof Date&&typeof Utilities!=='undefined'?Utilities.formatDate(raw,timezone||'Asia/Dhaka','yyyy-MM-dd'):U.isoDate(raw),status=U.canonicalText(r[statusIndex]);if(date&&status===approvedStatus)out[date]={name:U.text(r[nameIndex]),status:status};});return out;}
   function dayNumber(name){var names=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'],n=names.indexOf(U.canonicalText(name));if(n<0)throw new Error('Unknown weekly holiday: '+name);return n;}
   function findDeclaredTotal(result){if(!result)return null;var sourceTotal=result.metadata&&result.metadata.monthlyWorkingDays;if(sourceTotal)return Number(sourceTotal);var records=result.records||[],values={};records.filter(function(r){return r.metric_id==='TOTAL_WORKING_DAYS';}).forEach(function(r){values[r.numeric_value]=(values[r.numeric_value]||0)+1;});var keys=Object.keys(values);return keys.length?Number(keys.sort(function(a,b){return values[b]-values[a];})[0]):null;}
   function count(rows,predicate){return rows.reduce(function(n,r){return n+(predicate(r)?1:0);},0);}

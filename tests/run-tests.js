@@ -382,6 +382,8 @@ test('calculates Momentum and direction from the same matured working-day window
   equal(SIP.ForecastBaseEngine.momentumResult({'1':1,'2':1,'3':1,'4':1}).direction,'FLAT');
   equal(SIP.ForecastBaseEngine.momentumResult({'1':1,'2':1,'3':2,'4':2}).direction,'UP');
   const ui=fs.readFileSync(path.join(root,'src','html','Scripts.html'),'utf8');ok(ui.includes("x.momentumDirection||'Insufficient data'"));ok(!/\['Momentum'[^\n]+x\.trend/.test(ui));
+  const originalFormatDate=sandbox.Utilities.formatDate;sandbox.Utilities.formatDate=(date,timeZone)=>new Date(new Date(date).getTime()+(timeZone==='Asia/Dhaka'?6:0)*3600000).toISOString().slice(0,10);
+  try{const values=[['holiday_date','holiday_name','approval_status'],[new Date('2026-08-04T18:00:00.000Z'),'Approved Aug 5','APPROVED']],spreadsheet={getSheetByName:name=>name==='Holiday'?{getDataRange:()=>({getValues:()=>values})}:null};const settings=SIP.BusinessCalendar.loadSettings(spreadsheet,SIP.Config.get());ok(settings.holidays['2026-08-05']);ok(!settings.holidays['2026-08-04']);}finally{sandbox.Utilities.formatDate=originalFormatDate;}
 });
 
 test('keeps Territory, Area, and Region as independent dashboard dimensions',()=>{
