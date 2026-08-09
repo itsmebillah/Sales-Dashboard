@@ -55,7 +55,7 @@ SIP.KpiEngine = (function () {
       rsmCount:A.count(state.sets.rsms),productCount:A.count(state.sets.products),
       collection:collection,projection:sum.PROJECTION_AMOUNT||0,lifting:sum.LIFTING_AMOUNT||0,
       stock:A.latestSum(state,'STOCK_AMOUNT'),secondary:sum.SECONDARY_AMOUNT||0,orders:sum.ORDER_COUNT||0,
-      growthPct:growth,growthReferenceAmount:prior,growthComparable:growthComparable,momentumPct:forecast.momentum,
+      growthPct:growth,growthReferenceAmount:prior,growthComparable:growthComparable,momentumPct:forecast.momentum,momentumDirection:forecast.momentumDirection,
       present:attendanceEntity?attendanceEntity.present:0,absent:attendanceEntity?attendanceEntity.absent:0,attendancePct:attendanceEntity?attendanceEntity.attendancePct:null,salesPerPresentDay:attendanceEntity&&attendanceEntity.present?sales/attendanceEntity.present:null,attendancePeriodStart:attendance&&attendance.periodStart||'',
       collectionTrendPct:SIP.ForecastBaseEngine.seriesMomentum(state.daily.COLLECTION_AMOUNT||{}),
       collectionFlowRatioPct:ratio(collection,sales),periodSalesCollectionGap:sales-collection,

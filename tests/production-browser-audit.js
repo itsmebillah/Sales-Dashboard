@@ -157,13 +157,19 @@ async function main() {
         collection: x.collection, projection: x.projection, lifting: x.lifting, stock: x.stock,
         secondary: x.secondary, productVolume: x.productVolume, dealerCount: x.dealerCount,
         srCount: x.srCount, tsoCount: x.tsoCount, rsmCount: x.rsmCount, productCount: x.productCount,
-        growthPct: x.growthPct, growthComparable: x.growthComparable, momentumPct: x.momentumPct,
+        growthPct: x.growthPct, growthComparable: x.growthComparable, momentumPct: x.momentumPct, momentumDirection: x.momentumDirection,
         present: x.present, absent: x.absent, attendancePct: x.attendancePct,
         salesPerPresentDay: x.salesPerPresentDay, attendancePeriodStart: x.attendancePeriodStart,
         forecastBase: x.forecastBase
       };
     }),
     attendance: await appFrame.evaluate(() => BI.state.data && BI.state.data.attendance || null),
+    momentumDisplay: await appFrame.evaluate(() => {
+      const card=[...document.querySelectorAll('.kpi-card')].find(node=>node.querySelector('.kpi-top span')?.textContent.trim()==='Momentum');
+      const rows=[...document.querySelectorAll('#forecastSummary .forecast-row')];
+      const direction=rows.find(node=>node.querySelector('span')?.textContent.trim()==='Direction');
+      return{cardValue:card?.querySelector('.kpi-value')?.textContent.trim()||null,cardDirection:card?.querySelector('.kpi-note')?.textContent.trim()||null,forecastDirection:direction?.querySelector('strong')?.textContent.trim()||null};
+    }),
     cachePerformance: await appFrame.evaluate(() => BI.state.data && BI.state.data.performance || null),
     refreshTrace,
     measuredPerformance: {

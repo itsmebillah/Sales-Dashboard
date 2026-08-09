@@ -15,13 +15,16 @@
   governed source while unavailable Area/Region filters remain empty and disabled.
 - Made `Sales Data Base Monthly!AZ3` the authoritative monthly working-day total
   for remaining-day, daily-pace, required-daily, and forecast calculations.
+- Corrected Momentum to compare equal matured working-day windows through the
+  governed cutoff. Its percentage and Up/Down/Flat direction now come from the
+  same result instead of mixing daily momentum with the historical monthly trend.
 - Added strict operational period alignment. July Collection/Projection cannot
   enter August KPIs; explicitly historical Sales remains available for trends.
 - Made target parsing month-independent.
 - Stopped rewriting redundant `Master Dataset`, legacy `Hierarchy`, and
   `Relationship Model` sheets. They remain unchanged as rollback archives while
   the compact runtime model is certified and cached.
-- Expanded regression coverage from 32 to 43 passing test groups, including a
+- Expanded regression coverage from 32 to 44 passing test groups, including a
   bounded refresh trace for production timeout diagnosis.
 
 ## 3.0.1 — Production Readiness Corrections

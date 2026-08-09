@@ -61,7 +61,7 @@ Notation: `A` actual Sales, `T` monthly Target, `WD_e` elapsed working days, `WD
 | YoY Growth % | `(current - same month prior year) / prior year` | Conditional on history |
 | Rolling 3-Day Average | Mean Sales over last 3 working days | Available |
 | Rolling 7-Day Average | Mean Sales over last 7 working days | Available |
-| Short-term Momentum % | `rolling 3D / preceding 3D - 1` | Available |
+| Short-term Momentum % | latest up-to-3 matured working-day average / preceding equal working-day average - 1; zero comparison returns unavailable | Available |
 | Trend Slope | Linear slope of daily Sales over chosen window | Available |
 | Volatility | Standard deviation or coefficient of variation of daily Sales | Available |
 | Growth Contribution | Entity absolute growth / company absolute growth | Available |

@@ -371,6 +371,19 @@ test('enforces exact-number dashboard formatting and cache-only hydration', () =
   ok(source.includes("saved==='dark'?'dark':'light'"),'light mode must be the default application theme');
 });
 
+test('calculates Momentum and direction from the same matured working-day windows',()=>{
+  const series={'2026-08-01':2099365,'2026-08-02':2134317,'2026-08-03':1982598,'2026-08-04':2026779,'2026-08-05':1934690,'2026-08-06':377949,'2026-08-07':74092,'2026-08-08':58603};
+  const rows=Object.keys(series).map(date=>({date,isWorkingDay:date!=='2026-08-05'&&date!=='2026-08-07'}));
+  const state={daily:{SALES_AMOUNT:series},periods:{HISTORICAL_SALES_AMOUNT:{'2026-06-01':100,'2026-07-01':200}}};
+  const result=SIP.ForecastBaseEngine.calculate(state,{sales:10555696,currentWorkingDay:5,totalWorkingDay:26,calendar:{rows,current:{dataCutoffDate:'2026-08-06'}}});
+  ok(Math.abs(result.momentum-(-0.4158907822969384))<1e-12);equal(result.momentumDirection,'DOWN');equal(result.historicalTrend.direction,'UP');
+  equal(result.momentumBase.windowSize,2);equal(result.momentumBase.currentDates.join(','),'2026-08-04,2026-08-06');equal(result.momentumBase.comparisonDates.join(','),'2026-08-02,2026-08-03');
+  equal(SIP.ForecastBaseEngine.momentumResult({'1':0,'2':0,'3':1,'4':2}).direction,'INSUFFICIENT_DATA');
+  equal(SIP.ForecastBaseEngine.momentumResult({'1':1,'2':1,'3':1,'4':1}).direction,'FLAT');
+  equal(SIP.ForecastBaseEngine.momentumResult({'1':1,'2':1,'3':2,'4':2}).direction,'UP');
+  const ui=fs.readFileSync(path.join(root,'src','html','Scripts.html'),'utf8');ok(ui.includes("x.momentumDirection||'Insufficient data'"));ok(!/\['Momentum'[^\n]+x\.trend/.test(ui));
+});
+
 test('keeps Territory, Area, and Region as independent dashboard dimensions',()=>{
   const index=fs.readFileSync(path.join(root,'src','html','Index.html'),'utf8'),filters=fs.readFileSync(path.join(root,'src','html','Filters.html'),'utf8'),hierarchy=fs.readFileSync(path.join(root,'src','08b_HierarchyParser.gs'),'utf8');
   ok(index.includes('<span>Territory</span><select id="filterTERRITORY"'));
