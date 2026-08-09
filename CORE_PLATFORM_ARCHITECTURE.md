@@ -6,7 +6,7 @@ Status: Frozen core; additive extensions only
 
 ## Architectural invariant
 
-`Master Dataset` is the canonical observation/event ledger and single source of truth for analytical facts. Parsers are the only ingestion writers. Metrics, forecasts, reports, alerts, APIs, AI insights and dashboards are consumers.
+The logical `Master Dataset` is the canonical observation/event ledger and single source of truth for analytical facts. It exists only in Apps Script memory and bounded checksummed cache; the physical Sheet tab is a header-only schema contract. Parsers are the only ingestion writers. Metrics, forecasts, reports, alerts, APIs, AI insights and dashboards are consumers.
 
 The source staging sheets remain outside the canonical core:
 
@@ -39,11 +39,11 @@ Allowed changes are additive records, new lookup values, effective-dated hierarc
 
 ## Master Dataset contract
 
-The master is a long-form, module-neutral ledger supporting events, observations, snapshots and plans. It contains lineage, time, hierarchy/entity keys, product/dealer/depot/bank keys, typed values, quality state and extensible JSON attributes.
+The logical master is a long-form, module-neutral ledger supporting events, observations, snapshots and plans. It contains lineage, time, hierarchy/entity keys, product/dealer/depot/bank keys, typed values, quality state and extensible JSON attributes. Each refresh rebuilds one deterministic generation from the governed source tabs; it never appends facts to the physical `Master Dataset` tab.
 
 This avoids adding monthly day columns, product columns, Attendance columns or module-specific schemas. Only one of the relevant typed value fields should carry a measure per record, governed by `Metric Dictionary`.
 
-Corrections do not destructively overwrite history. Loaders are idempotent by canonical/source keys, and revised facts retain version/batch lineage.
+Corrections do not overwrite source history. Runtime loaders are idempotent by canonical/source keys, and batch/quality diagnostics retain versioned execution evidence without permanently duplicating every generated fact row.
 
 ## Extension contract
 

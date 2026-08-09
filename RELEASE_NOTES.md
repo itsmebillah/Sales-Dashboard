@@ -1,5 +1,12 @@
 # Release Notes
 
+## 3.7.1 — Bounded Logical Master Dataset
+
+- Confirmed that the dashboard, KPI engine, filters, hierarchy, Attendance, reports, refresh and certification use the logical in-memory/cache Master Dataset and never read the physical Sheet tab.
+- Archived the single stale v3.6 physical snapshot outside the active workbook, then reduced the production `Master Dataset` to its frozen 41-column header.
+- Enforced a header-only, two-row allocation during refresh so repeated builds remain idempotent and cannot regrow generated fact history.
+- Kept current, prior-comparable and historical-trend facts sourced from the governed Sales tabs; no business source, diagnostic log or rollback tab was deleted.
+
 ## Repository Governance — 2026-08-09
 
 - Consolidated the complete v3.7.0 production history onto the canonical `main` branch.

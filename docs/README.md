@@ -12,6 +12,7 @@ This directory preserves both current operating guidance and dated audit evidenc
 - [KPI Dictionary](../KPI_DICTIONARY.md) — metric contracts
 - [Release Notes](../RELEASE_NOTES.md) — chronological implementation record
 - [Phase 2 hierarchy and Attendance implementation](PHASE2_HIERARCHY_ATTENDANCE_IMPLEMENTATION.md) — current hierarchy, period, working-day, and Attendance rules
+- [Master Dataset Retention Policy](MASTER_DATASET_RETENTION.md) — header-only physical contract and bounded runtime/cache model
 - [Post-P1 System Audit](SYSTEM_AUDIT_3.6.0.md) — latest full-system audit before the Phase 2 hierarchy and Attendance release
 
 ## Historical records

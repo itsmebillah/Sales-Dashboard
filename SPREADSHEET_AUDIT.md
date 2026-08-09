@@ -24,7 +24,7 @@ CacheService is best-effort and was observed evicting the production payload.
 | Monthly Projection | Production | Collection and projection transactions | Keep |
 | Dealer lifting | Production | Lifting, stock and secondary commercial-flow facts | Keep |
 | Platform Guide | Master | Operating guide for the governed platform | Keep |
-| Master Dataset | Master | Frozen canonical dataset contract and optional persisted analytical surface | Keep |
+| Master Dataset | Contract | Frozen 41-column logical-model header only; generated facts remain in memory/cache | Keep header only |
 | Master Lookup | Master | Governed business-name and identity lookup contract | Keep |
 | Calendar | Master | Working-day and reporting-period contract | Keep |
 | Configuration | Master | Platform configuration contract | Keep |

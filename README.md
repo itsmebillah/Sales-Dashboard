@@ -6,7 +6,7 @@ Production sales analytics from governed Google Sheets data to an Apps Script ex
 
 [![Version](https://img.shields.io/badge/version-3.7.0-0f766e?style=flat-square)](RELEASE_NOTES.md)
 [![Status](https://img.shields.io/badge/status-production-15803d?style=flat-square)](docs/ADR-008-CACHE-ONLY-HTML-SERVICE-RUNTIME.md)
-[![Tests](https://img.shields.io/badge/tests-44%20passing-15803d?style=flat-square)](tests/run-tests.js)
+[![Tests](https://img.shields.io/badge/tests-45%20passing-15803d?style=flat-square)](tests/run-tests.js)
 [![Platform](https://img.shields.io/badge/platform-Apps%20Script%20HTML%20Service-111827?style=flat-square)](#technology-stack)
 
 [Live Dashboard](https://script.google.com/macros/s/AKfycbyy8kfJEm2wW0RCIEWO79n5sywY_4R0VbneQLRJBXaW1AHr12XJQeqdsT8oIC2q2jiJ/exec) | [Architecture](CORE_PLATFORM_ARCHITECTURE.md) | [KPI Dictionary](KPI_DICTIONARY.md) | [Operations Guide](docs/PHASE3_OPERATIONS.md) | [Documentation Index](docs/README.md) | [Release Notes](RELEASE_NOTES.md)
@@ -51,7 +51,7 @@ The [full dashboard capture](assets/screenshots/sales-dashboard-desktop.png) sho
 flowchart LR
     Sources[Sales, Lifting, Projection, Hierarchy tab, Attendance] --> Parsers[Apps Script parsers]
     Parsers --> Quality[Normalization and quality gates]
-    Quality --> Master[(Canonical Master Dataset)]
+    Quality --> Master[(Logical Master Dataset<br/>in memory/cache)]
     Master --> MasterCache[Checksummed Master cache]
     MasterCache --> KPI[One-pass KPI engine]
     KPI --> KpiCache[Certified KPI cache]
@@ -59,7 +59,7 @@ flowchart LR
     HTML --> Dashboard[Executive dashboard]
 ```
 
-The architectural invariant is simple: parsers are the only ingestion readers, the Master Dataset is the canonical analytical ledger, and every metric or dashboard is a read-only consumer. Hierarchy and Attendance remain compact runtime/cache models instead of being duplicated into large generated fact sheets. No KPI module reads raw source sheets or recalculates another module's formula.
+The architectural invariant is simple: parsers are the only ingestion readers, the logical Master Dataset is the canonical in-memory analytical ledger, and every metric or dashboard is a read-only consumer. The physical `Master Dataset` tab retains only the frozen 41-column schema header; refreshes rebuild facts from governed sources and publish bounded caches instead of duplicating raw history into Sheets. No KPI module reads raw source sheets or recalculates another module's formula.
 
 Read [CORE_PLATFORM_ARCHITECTURE.md](CORE_PLATFORM_ARCHITECTURE.md) and the architecture decision records in [`docs`](docs) for the full contract.
 
@@ -77,7 +77,7 @@ The production spreadsheet is `1HxVEJqWqIc_xSGIBYJpJBIuHeqTaQiUUJ_Lc7jLKlSY`. Th
 | `Attendance` | HR attendance joined by SR ID and explicit attendance date |
 | `Configuration` and `Holiday` | Business-calendar policy and approved holidays |
 
-The generated `Master Dataset`, `Relationship Model`, and legacy `Hierarchy` sheets are not source-of-truth inputs. The legacy hierarchy is retained only as a rollback archive.
+The physical `Master Dataset` is a header-only contract surface, not a data store or source input. `Relationship Model` and legacy `Hierarchy` are also not source inputs; the latter two remain rollback archives.
 
 ## Technology Stack
 

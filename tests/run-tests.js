@@ -586,6 +586,22 @@ test('keeps legacy generated hierarchy and relationship sheets as rollback archi
   ok(source.includes('legacy generated sheet retained for rollback'));ok(!source.includes("replace(spreadsheet.getSheetByName(config.sheets.hierarchy),hierarchyHeaders"));ok(!source.includes("replace(spreadsheet.getSheetByName(config.sheets.relationships),relationshipHeaders"));
 });
 
+test('keeps the physical Master Dataset header-only and bounded',()=>{
+  const actions={cleared:0,deleted:0,header:null};
+  const masterSheet={
+    getLastRow:()=>4,getMaxRows:()=>10,getMaxColumns:()=>41,
+    getRange:(row,column,rowCount,columnCount)=>({setValues:values=>{if(row===1)actions.header=values[0];},clearContent:()=>{actions.cleared=rowCount;}}),
+    deleteRows:(start,count)=>{equal(start,3);actions.deleted=count;}
+  };
+  const calendarSheet={
+    getLastRow:()=>1,getMaxRows:()=>2,getMaxColumns:()=>20,getName:()=>'Calendar',
+    getRange:()=>({setValues:()=>{},clearContent:()=>{}})
+  };
+  const config=SIP.Config.get(),spreadsheet={getId:()=>'',getSheetByName:name=>name===config.sheets.masterDataset?masterSheet:(name===config.sheets.calendar?calendarSheet:null)};
+  const result=SIP.PersistenceEngine.persist(spreadsheet,{records:[{},{},{}],calendar:{rows:[]}},config);
+  ok(result.verified);ok(result.master.headerOnly);equal(result.master.rows,0);equal(result.master.runtimeRecords,3);equal(result.master.physicalRowsRemoved,3);equal(result.master.allocatedRowsRemoved,8);equal(result.master.maxRows,2);equal(actions.cleared,3);equal(actions.deleted,8);equal(actions.header.length,41);
+});
+
 process.on('exit', () => {
   if (!process.exitCode) console.log(`\n${passed} tests passed.`);
 });

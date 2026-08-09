@@ -17,6 +17,10 @@ events, observations, snapshots, and plans. The existing `Master Dataset` sheet
 retains the frozen schema header as a contract and stewardship reference, but is
 not populated as a duplicate data store.
 
+Refreshes enforce this header-only boundary and bound the tab to two allocated
+rows. Current-period, prior-comparable, and historical-trend records are rebuilt
+from governed source tabs for each generation; they are not retained physically.
+
 Parsers emit the same frozen fields. The logical master adds in-memory indexes,
 dimensions, effective relationships, hierarchy, quality flags, metadata,
 forecast placeholders, and an Attendance placeholder. Consumers receive this
