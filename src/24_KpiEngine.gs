@@ -57,6 +57,31 @@ SIP.KpiEngine = (function () {
     var othSales = Math.max(0, sales - detSales);
     var detSalesPct = sales > 0 ? ratio(detSales, sales) : 0;
     var othSalesPct = sales > 0 ? ratio(othSales, sales) : 0;
+
+    var momentumValue = forecast.momentum;
+    var momentumDir = forecast.momentumDirection;
+    if (momentumValue === null || momentumDir === 'INSUFFICIENT_DATA') {
+      if (growth !== null) {
+        momentumValue = growth;
+        momentumDir = growth > 0 ? 'UP' : (growth < 0 ? 'DOWN' : 'FLAT');
+      } else if (target > 0) {
+        var achievement = sales / target;
+        var expectedPace = total > 0 ? effectiveElapsed / total : 0;
+        momentumValue = achievement - expectedPace;
+        momentumDir = momentumValue >= 0 ? 'UP' : (momentumValue >= -0.1 ? 'FLAT' : 'DOWN');
+      } else if (sales > 0) {
+        momentumValue = 0;
+        momentumDir = 'UP';
+      } else {
+        momentumDir = 'FLAT';
+      }
+    }
+
+    var trendDir = forecast.historicalTrend && forecast.historicalTrend.direction;
+    if (!trendDir || trendDir === 'INSUFFICIENT_DATA') {
+      trendDir = momentumDir && momentumDir !== 'INSUFFICIENT_DATA' ? momentumDir : 'Stable';
+    }
+
     return {
       entityType:state.entityType,entityId:state.entityId,
       sales:sales,target:target,achievementPct:ratio(sales,target),gap:target-sales,
@@ -67,11 +92,11 @@ SIP.KpiEngine = (function () {
       rsmCount:A.count(state.sets.rsms),productCount:A.count(state.sets.products),
       collection:collection,projection:sum.PROJECTION_AMOUNT||0,lifting:sum.LIFTING_AMOUNT||0,
       stock:A.latestSum(state,'STOCK_AMOUNT'),secondary:sum.SECONDARY_AMOUNT||0,orders:sum.ORDER_COUNT||0,
-      growthPct:growth,growthReferenceAmount:prior,growthComparable:growthComparable,momentumPct:forecast.momentum,momentumDirection:forecast.momentumDirection,
+      growthPct:growth,growthReferenceAmount:prior,growthComparable:growthComparable,momentumPct:momentumValue,momentumDirection:momentumDir,
       present:attendanceEntity?attendanceEntity.present:0,absent:attendanceEntity?attendanceEntity.absent:0,attendancePct:attendanceEntity?attendanceEntity.attendancePct:null,salesPerPresentDay:attendanceEntity&&attendanceEntity.present?sales/attendanceEntity.present:null,attendancePeriodStart:attendance&&attendance.periodStart||'',
       collectionTrendPct:SIP.ForecastBaseEngine.seriesMomentum(state.daily.COLLECTION_AMOUNT||{}),
       collectionFlowRatioPct:ratio(collection,sales),periodSalesCollectionGap:sales-collection,
-      productVolume:sum.PRODUCT_QUANTITY||0,detergentSales:detSales,detergentSalesPct:detSalesPct,detergentVolume:sum.DETERGENT_VOLUME||0,othersSales:othSales,othersSalesPct:othSalesPct,contributionPct:null,mixPct:null,rank:null,trend:forecast.historicalTrend.direction,
+      productVolume:sum.PRODUCT_QUANTITY||0,detergentSales:detSales,detergentSalesPct:detSalesPct,detergentVolume:sum.DETERGENT_VOLUME||0,othersSales:othSales,othersSalesPct:othSalesPct,contributionPct:null,mixPct:null,rank:null,trend:trendDir,
       forecastBase:forecast,recordCount:state.recordCount,certification:'PROVISIONAL'
     };
   }
