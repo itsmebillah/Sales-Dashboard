@@ -3,6 +3,7 @@ SIP.Normalizer = (function () {
 
   function dealer(name, explicitCode) {
     var original = U.text(name);
+    if (/^(paste here|sample|template|enter data|n\/a|test)$/i.test(original)) original = '';
     var code = U.normalizeId(explicitCode || U.embeddedCode(original));
     var normalized = U.normalizeName(original);
     return {

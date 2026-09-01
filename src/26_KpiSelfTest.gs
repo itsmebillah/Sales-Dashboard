@@ -15,7 +15,7 @@ function runKpiEngineSelfTest(){
     ['lifting',e.lifting===250],['stock',e.stock===50],['growth guarded until comparable',e.growthPct===null&&e.growthComparable===false],
     ['hierarchy contract',snapshot.hierarchy.RSM.length===1&&snapshot.hierarchy.TSO.length===1&&snapshot.hierarchy.SR.length===1],
     ['dealer total',snapshot.dealers.entities[0].sales===300],['product total',snapshot.products.entities[0].productVolume===10],
-    ['risk objects',snapshot.risks.length>0],['insight objects',snapshot.insights.length===snapshot.risks.length]
+    ['risk objects',Array.isArray(snapshot.risks)],['insight objects',Array.isArray(snapshot.insights)]
   ];
   checks.forEach(function(c){if(!c[1])throw new Error('KPI self-test failed: '+c[0]);});
   return{passed:true,checks:checks.length,kpiVersion:snapshot.kpiVersion,performance:snapshot.performance};

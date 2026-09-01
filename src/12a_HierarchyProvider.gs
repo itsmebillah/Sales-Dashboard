@@ -2,7 +2,7 @@ SIP.HierarchyProvider=(function(){
   var U=SIP.Utils;
   function apply(parsed,diagnostics,context){
     var source=find(parsed,'SRC_HIERARCHY'),assignments=source&&source.hierarchyAssignments||[];
-    if(!assignments.length){diagnostics.issue('ERROR','HIERARCHY_SOURCE_EMPTY','Hierarchy tab has no usable active assignments',{});return{provider:'Hierarchy tab',assignments:0,recordsEnriched:0};}
+    if(!assignments.length){diagnostics.issue('WARN','HIERARCHY_SOURCE_EMPTY','Hierarchy tab has no usable active assignments; fallback to sales hierarchy',{});return{provider:'Hierarchy tab',assignments:0,recordsEnriched:0};}
     var resolution=resolveActive(assignments,parsed,diagnostics,context);assignments=resolution.assignments;source.hierarchyAssignments=assignments;
     var hierarchyEmployees=source.dimensions.employees||{},aliasByName={},bySr={},bySrDealer={},byTso={},byRsm={},territoryByDealer={};
     Object.keys(hierarchyEmployees).forEach(function(id){var e=hierarchyEmployees[id],key=(e.role||'')+'|'+e.normalizedName;if(e.normalizedName)aliasByName[key]=aliasByName[key]===undefined?id:(aliasByName[key]===id?id:null);});

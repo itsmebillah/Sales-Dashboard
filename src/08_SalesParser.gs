@@ -2,18 +2,21 @@ SIP.SalesParser = (function () {
   var U = SIP.Utils, H = SIP.HeaderDetector, N = SIP.Normalizer, C = SIP.ParserCommon;
 
   function parse(source, context) {
+    if (isRawDataFormat(source.values, source)) {
+      return parseRawDataFormat(source, context);
+    }
     var started = Date.now(), rows = source.values, diag = context.diagnostics, id = source.definition.id;
     var header = H.detect(rows, { maxRows: context.config.parser.maxHeaderScanRows, minimumScore: 5, requiredGroups: [
-      ['ID'], ['RSM'], ['TSO', 'T_S_O'], ['SR'], ['DESIGNATION'], ['AREA_POINT', 'AREA_POINT_'], ['SALES_OF_JULY_26', 'AVG']
+      ['ID'], ['RSM'], ['TSO', 'T_S_O'], ['SR'], ['DESIGNATION'], ['AREA_POINT', 'AREA_POINT_'], ['SALES_OF_JULY_26', 'SALES_OF_AUG_26', 'AVG']
     ] }, diag, id);
     if (!header) return empty(id);
     diag.source(id).headerRow = header.rowIndex + 1;
     var period = U.monthContext(rows);
-    if (!period.year) diag.issue('ERROR', 'SALES_PERIOD_NOT_FOUND', 'Could not infer Sales report month/year', { sourceId: id });
+    if (!period.year) diag.issue('WARN', 'SALES_PERIOD_NOT_FOUND', 'Could not infer Sales report month/year', { sourceId: id });
     var dlIndex = H.find(header.columns, ['DL_CD']);
     var totalIndex = findPrefix(header.keys, 'SALES_OF_');
     var days = C.contiguousDayColumns(rows[header.rowIndex], dlIndex, totalIndex);
-    if (!days.length) diag.issue('ERROR', 'DAILY_COLUMNS_NOT_FOUND', 'No Sales day columns detected', { sourceId: id });
+    if (!days.length) diag.issue('WARN', 'DAILY_COLUMNS_NOT_FOUND', 'No Sales day columns detected', { sourceId: id });
     var productStart = H.find(header.columns, ['AVERAGE_DAILY_OUTLET']);
     var productMeta = buildProductMeta(rows, header.rowIndex, productStart);
     var records = [], dimensions = { employees: {}, dealers: {}, products: {} }, ignored = 0, loaded = 0;
@@ -26,7 +29,7 @@ SIP.SalesParser = (function () {
       var employee = N.employee(sourceEmployeeId, srName, 'SR');
       if (!employee.id) {
         if (isPresentationRow(row,header,days,productMeta,context)) { ignored++; continue; }
-        diag.issue('ERROR', 'SALES_EMPLOYEE_KEY_MISSING', 'SR row has business values but no employee key', { row: r + 1 }); ignored++; continue;
+        diag.issue('WARN', 'SALES_EMPLOYEE_KEY_MISSING', 'SR row has business values but no employee key', { row: r + 1 }); ignored++; continue;
       }
       var dealer = N.dealer(C.value(row, header.columns, ['AREA_POINT', 'AREA_POINT_']), C.value(row, header.columns, ['DEALER_SL']));
       dimensions.employees[employee.id] = employee; if (dealer.id) dimensions.dealers[dealer.id] = dealer;
@@ -60,23 +63,36 @@ SIP.SalesParser = (function () {
       loaded++;
     }
     var s = diag.source(id); s.rowsLoaded = loaded; s.rowsIgnored = ignored; s.recordsEmitted = records.length; s.executionMs += Date.now() - started;
-    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, dailyColumns: days, productColumns: productMeta, monthlyWorkingDays: monthlyWorkingDays(rows), monthlyWorkingDaysSource:'Sales Data Base Monthly!AZ3', salesControlTotal:controlTotal(rows) } };
+    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, dailyColumns: days, productColumns: productMeta, monthlyWorkingDays: monthlyWorkingDays(rows), monthlyWorkingDaysSource:null, salesControlTotal:controlTotal(rows) } };
   }
 
   function baseRecord(context, source, row, rowIndex, period, employee, dealer, columns) {
-    var rsm = N.employee('', C.value(row, columns, ['RSM']), 'RSM');
-    var tso = N.employee('', C.value(row, columns, ['TSO', 'T_S_O']), 'TSO');
+    var rsm = N.employee('', C.value(row, columns, ['RSM', 'RSM_NAME', 'REGION']), 'RSM');
+    var tso = N.employee('', C.value(row, columns, ['TSO', 'T_S_O', 'TSO_NAME']), 'TSO');
+    var asm = N.employee('', C.value(row, columns, ['ASM', 'A_S_M', 'ASM_NAME']), 'ASM');
+    var areaName = C.value(row, columns, ['AREA', 'AREA_NAME', 'ZONE']);
+    var areaId = areaName ? 'AREA:' + U.hash(U.normalizeName(areaName)).slice(0, 16) : '';
+    var terrName = C.value(row, columns, ['TERRITORY', 'TERRITORY_NAME']);
+    var terrId = terrName ? 'TERRITORY:' + U.hash(U.normalizeName(terrName)).slice(0, 16) : '';
     return { batchId: context.batchId, sourceSystem: 'ERP_EXPORT', sourceDataset: source.definition.name,
       sourceRecordId: U.text(rowIndex + 1) + ':' + employee.sourceId, contractId: 'PC_SALES_V1', moduleId: 'SALES', recordType: 'OBSERVATION',
       periodStart: period.periodStart, periodEnd: period.periodEnd, ingestedAt: context.ingestedAt,
-      rsmId: rsm.id, tsoId: tso.id, srId: employee.id, employeeId: employee.id, dealerId: dealer.id,
-      qualityStatus: dealer.keyQuality === 'MISSING' ? 'VALID' : (dealer.keyQuality === 'CODE' ? 'VALID' : 'VALID'),
+      asmId: asm.id, rsmId: rsm.id, tsoId: tso.id, srId: employee.id, employeeId: employee.id, dealerId: dealer.id,
+      areaId: areaId, territoryId: terrId, qualityStatus: 'VALID',
       attributes: { sourceRow: rowIndex + 1, employeeName: employee.name, dealerName: dealer.name, dealerKeyQuality: dealer.keyQuality,
         joiningDate: U.isoDate(C.value(row, columns, ['JOINING_DATE'])), areaPoint: dealer.name } };
   }
 
   function addNamedMetric(records, base, row, header, aliases, metricId, context, recordType, suffixMatch) {
-    var index = suffixMatch ? findSuffix(header.keys,aliases[0]) : (aliases[0].slice(-1) === '_' ? findPrefix(header.keys, aliases[0]) : H.find(header.columns, aliases));
+    if (!header || !header.columns) return;
+    var index = H.find(header.columns, aliases);
+    if (index < 0 && header.keys) {
+      for (var a = 0; a < aliases.length; a++) {
+        var alias = aliases[a];
+        index = suffixMatch ? findSuffix(header.keys, alias) : (alias.slice(-1) === '_' ? findPrefix(header.keys, alias) : -1);
+        if (index >= 0) break;
+      }
+    }
     if (index < 0) return;
     var v = U.number(row[index], context.config.parser.blankTokens);
     if (v !== null) records.push(C.metricRecord(base, metricId, v, '', metricId, { recordType: recordType || 'OBSERVATION' }));
@@ -132,6 +148,122 @@ SIP.SalesParser = (function () {
   function controlTotal(rows) {
     var value=rows[1]&&U.number(rows[1][13],[]);
     return value!==null?value:null;
+  }
+
+  function isRawDataFormat(rows, source) {
+    if (!rows || rows.length < 3) return false;
+    var sheetName = (source && source.name) || (source && source.definition && source.definition.sheetName) || '';
+    if (/raw\s*data/i.test(sheetName)) return true;
+    var cellA1 = U.text(rows[0][0]);
+    if (/Sales Data Base/i.test(cellA1)) return false;
+    var row0 = rows[0] || [], row1 = rows[1] || [];
+    var hasNumberOrPriceInRow0 = false, hasProductInRow1 = false;
+    for (var c = 0; c < Math.max(row0.length, row1.length); c++) {
+      var val0 = U.number(row0[c], []);
+      if (val0 !== null && val0 > 0) hasNumberOrPriceInRow0 = true;
+      var val1 = U.text(row1[c]);
+      if (val1 && !/^\d+$/.test(val1) && !/total|sales|target|designation|rsm|tso|sr|id|area|dealer/i.test(val1)) hasProductInRow1 = true;
+    }
+    return hasNumberOrPriceInRow0 || hasProductInRow1;
+  }
+
+  function parseRawDataFormat(source, context) {
+    var started = Date.now(), rows = source.values, diag = context.diagnostics, id = source.definition.id;
+    var priceRow = rows[0] || [], nameRow = rows[1] || [];
+    var productMeta = [];
+    var ignoreHeaderKeys = /^(total|sales|target|tgt|monthly\s*wd|wd|order|no\.\s*of\s*order|avg|working\s*hour|id|sr|rsm|tso|asm|dealer|area|point|sl|cd|code|date|designation|desig)$/i;
+    for (var col = 4; col < nameRow.length; col++) {
+      var pName = U.text(nameRow[col]);
+      if (!pName || ignoreHeaderKeys.test(pName)) continue;
+      if (/^(sl|point|dealer|sr|id|sr_id|sr_name|rsm|tso|asm|area|territory|total|target|tgt|monthly_tgt)$/i.test(pName)) continue;
+      var pPrice = U.number(priceRow[col], context.config.parser.blankTokens) || 0;
+      productMeta.push({ index: col, name: pName, price: pPrice });
+    }
+
+    var header = H.detect(rows, { maxRows: 6, minimumScore: 1, requiredGroups: [
+      ['ID', 'PF_NO', 'SR_ID', 'EMPLOYEE_ID', 'CODE', 'SR_CODE', 'SL', 'DEALER_SL'],
+      ['SR', 'SR_NAME', 'NAME', 'NAME_OF_SR', 'EMPLOYEE_NAME', 'SALES_REPRESENTATIVE', 'SR_']
+    ] }, diag, id);
+
+    var headerRowIndex = header ? header.rowIndex : 2;
+    var columns = header ? header.columns : {};
+    var period = U.monthContext(rows);
+
+    var records = [], dimensions = { employees: {}, dealers: {}, products: {} }, ignored = 0, loaded = 0;
+    for (var r = headerRowIndex + 1; r < rows.length; r++) {
+      var row = rows[r];
+      if (!row || !row.length) { ignored++; continue; }
+      var sourceEmployeeId = C.value(row, columns, ['SR_ID', 'ID', 'PF_NO', 'EMPLOYEE_ID', 'CODE', 'SR_CODE', 'SL']);
+      if (!sourceEmployeeId && row[2] != null && String(row[2]).trim() !== '' && !/total|subtotal|sum|grand/i.test(String(row[2]))) {
+        sourceEmployeeId = String(row[2]).trim();
+      }
+      var srName = C.value(row, columns, ['SR_NAME', 'SR', 'NAME', 'NAME_OF_SR', 'EMPLOYEE_NAME', 'SALES_REPRESENTATIVE']);
+      if (!srName && row[3] != null && typeof row[3] === 'string' && row[3].trim() !== '') {
+        srName = String(row[3]).trim();
+      }
+      if (!srName && !sourceEmployeeId) { ignored++; continue; }
+      if (/total|subtotal|sum|grand/i.test(srName || '') || /total|subtotal|sum|grand/i.test(sourceEmployeeId || '')) { ignored++; continue; }
+
+      var employee = N.employee(sourceEmployeeId, srName, 'SR');
+      if (!employee.id) { ignored++; continue; }
+
+      var dealerName = C.value(row, columns, ['POINT', 'AREA_POINT', 'AREA_POINT_', 'DEALER_NAME', 'DEALER']);
+      if (!dealerName && row[1] != null && typeof row[1] === 'string' && row[1].trim() !== '') {
+        dealerName = String(row[1]).trim();
+      }
+      if (/^(paste here|sample|template|enter data|n\/a|test)$/i.test(dealerName)) {
+        dealerName = '';
+      }
+      var dealerCode = C.value(row, columns, ['DEALER_SL', 'DEALER_ID', 'DL_CD', 'DEALER_CODE', 'SL']);
+      var dealer = N.dealer(dealerName, dealerCode);
+      dimensions.employees[employee.id] = employee;
+      if (dealer.id) dimensions.dealers[dealer.id] = dealer;
+
+      var base = baseRecord(context, source, row, r, period, employee, dealer, columns);
+      var eventDate = U.isoDate(C.value(row, columns, ['DATE', 'EVENT_DATE'])) || period.periodStart;
+
+      var rowSalesValue = 0;
+      productMeta.forEach(function (p) {
+        var qty = U.number(row[p.index], context.config.parser.blankTokens);
+        if (qty === null || qty === 0) return;
+        var product = N.product(p.name, '', '');
+        if (!product.id) return;
+        dimensions.products[product.id] = product;
+        var amount = p.price > 0 ? qty * p.price : null;
+        if (amount !== null) rowSalesValue += amount;
+        records.push(C.metricRecord(base, 'PRODUCT_QUANTITY', qty, eventDate, 'P' + p.index, {
+          productId: product.id,
+          productGroupId: product.group ? 'PRODUCT_GROUP:' + U.hash(product.group).slice(0, 16) : '',
+          productName: p.name,
+          quantity: qty,
+          amount: amount,
+          unitCode: 'SOURCE_UNIT'
+        }));
+      });
+
+      var explicitSales = C.value(row, columns, ['SALES_AMOUNT', 'TOTAL_SALES', 'SALES', 'SALES_OF']);
+      var salesVal = null;
+      if (rowSalesValue > 0) {
+        salesVal = rowSalesValue;
+      } else {
+        if (explicitSales === '' && row.length > 38) explicitSales = row[38]; // Column AM (index 38)
+        salesVal = U.number(explicitSales, context.config.parser.blankTokens);
+      }
+      if (salesVal !== null) {
+        records.push(C.metricRecord(base, 'SALES_AMOUNT', salesVal, eventDate, 'RAW_SALES'));
+      }
+
+      var explicitTarget = C.value(row, columns, ['TARGET', 'MONTHLY_TGT_PRODUCT_WISE_VALUE', 'MONTHLY_TGT', 'TGT', 'TARGET_AMOUNT']);
+      if (!explicitTarget && row.length > 39) explicitTarget = row[39]; // Column AN (index 39)
+      var targetVal = U.number(explicitTarget, context.config.parser.blankTokens);
+      if (targetVal !== null && targetVal > 0) {
+        records.push(C.metricRecord(base, 'TARGET_AMOUNT', targetVal, eventDate, 'RAW_TARGET', { recordType: 'PLAN' }));
+      }
+      loaded++;
+    }
+
+    var s = diag.source(id); s.rowsLoaded = loaded; s.rowsIgnored = ignored; s.recordsEmitted = records.length; s.executionMs += Date.now() - started;
+    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, productColumns: productMeta, monthlyWorkingDays: 26, salesControlTotal: null } };
   }
 
   function empty(id) { return { sourceId: id, records: [], dimensions: { employees: {}, dealers: {}, products: {} }, metadata: {} }; }

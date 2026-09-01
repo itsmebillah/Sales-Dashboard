@@ -1,5 +1,5 @@
 SIP.MaintenanceEngine=(function(){
-  var BUSINESS={'Sales Data Base Monthly':true,'Previous Month Sales':true,'Monthly Projection':true,'Dealer lifting':true,'Attendance':true};
+  var BUSINESS={'Raw Data':true,'Sales Data Base Monthly':true,'Previous Month Sales':true,'Monthly Projection':true,'Dealer lifting':true,'Attendance':true};
   var CLASSIFICATION={
     'Dashboard Cache':'Cache','Master Dataset':'Contract','Master Lookup':'Metadata','Calendar':'Metadata','Holiday':'Metadata','Configuration':'Metadata','Hierarchy':'Archive','Hierarchy tab':'Business Source','Relationship Model':'Archive','Parser Contract':'Metadata','Metric Dictionary':'Metadata','Module Registry':'Metadata','Source Registry':'Metadata','Import Batches':'Log','Quality Rules':'Metadata','Quality Results':'Log','Metric Store':'Historical Cache','Action Register':'Recovery','Audit Log':'Log','Platform Guide':'Metadata'
   };
@@ -18,7 +18,7 @@ SIP.MaintenanceEngine=(function(){
     if(!lock.tryLock(options.lockTimeoutMs||1000))return{ok:false,status:'SKIPPED_ACTIVE_REFRESH',at:SIP.Utils.nowIso()};
     try{
       var active=SIP.DurableCache.get();
-      if(!active||!active.batchId||!active.quality||active.quality.certification!=='CERTIFIED')return{ok:false,status:'SKIPPED_NO_CERTIFIED_CACHE',at:SIP.Utils.nowIso()};
+      if(!active||!active.batchId||!active.quality||(active.quality.certification!=='CERTIFIED'&&active.quality.certification!=='PROVISIONAL'))return{ok:false,status:'SKIPPED_NO_CERTIFIED_CACHE',at:SIP.Utils.nowIso()};
       var spreadsheet=SpreadsheetApp.openById(config.spreadsheetId),before=inventory(spreadsheet);
       var batches=pruneBatches(spreadsheet.getSheetByName(config.sheets.importBatches),active.batchId,config.maintenance);
       var quality=pruneQuality(spreadsheet.getSheetByName(config.sheets.qualityResults),batches.retainedBatchIds);

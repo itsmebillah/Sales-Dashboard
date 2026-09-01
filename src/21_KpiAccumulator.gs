@@ -3,11 +3,12 @@ SIP.KpiAccumulator = (function () {
 
   function aggregate(master,options) {
     options=options||{};var entities = {}, accepted = 0, excluded = 0,periodExcluded=0;
+    var dims = (master && master.dimensions) || {};
     (master.records || []).forEach(function (record) {
       if (record.quality_status !== 'VALID' && record.quality_status !== 'CERTIFIED') { excluded++; return; }
       if(options.periodStart&&record.period_start&&record.period_start!==options.periodStart&&!/^HISTORICAL_/.test(record.metric_id||'')){periodExcluded++;return;}
       accepted++;
-      entityRefs(record).forEach(function (ref) { apply(ensure(entities, ref), record); });
+      entityRefs(record).forEach(function (ref) { apply(ensure(entities, ref), record, dims); });
     });
     return { entities: entities, acceptedRecords: accepted, excludedRecords: excluded, periodExcludedRecords:periodExcluded };
   }
@@ -28,13 +29,24 @@ SIP.KpiAccumulator = (function () {
     return entities[key];
   }
 
-  function apply(state, r) {
+  function apply(state, r, dims) {
     state.recordCount++;
-    if(r.metric_id==='SALES_AMOUNT'||r.source_dataset==='Sales Data Base Monthly'){addSet(state.sets.dealers,r.dealer_id);addSet(state.sets.srs,r.sr_id);addSet(state.sets.tsos,r.tso_id);addSet(state.sets.rsms,r.rsm_id);addSet(state.sets.asms,r.asm_id);}
+    if(r.metric_id==='SALES_AMOUNT'||r.module_id==='SALES'||r.source_dataset==='Raw Data'||r.source_dataset==='Sales Data Base Monthly'){addSet(state.sets.dealers,r.dealer_id);addSet(state.sets.srs,r.sr_id);addSet(state.sets.tsos,r.tso_id);addSet(state.sets.rsms,r.rsm_id);addSet(state.sets.asms,r.asm_id);}
     if(r.metric_id==='PRODUCT_QUANTITY')addSet(state.sets.products,r.product_id);
     if (r.metric_id === 'COLLECTION_AMOUNT') addSet(state.sets.collectingDealers, r.dealer_id);
     if (r.metric_id === 'PROJECTION_AMOUNT') addSet(state.sets.projectingDealers, r.dealer_id);
     var value = numeric(r); if (value === null) return;
+    var pMeta = dims && dims.products && dims.products[r.product_id];
+    var pName = (pMeta && pMeta.name) || r.product_id || r.attributes_json || '';
+    var isDetergent = /detergent|dtg|neat|powder|bucket/i.test(pName) ||
+                      /detergent|dtg|neat|powder|bucket/i.test(r.attributes_json || '') ||
+                      /detergent|dtg|neat|powder|bucket/i.test(r.product_group_id || '');
+    if (isDetergent && r.metric_id === 'PRODUCT_QUANTITY') {
+      var qty = r.numeric_value || r.quantity || 0;
+      var amt = r.amount != null ? r.amount : (pMeta && pMeta.price ? qty * pMeta.price : 0);
+      state.sums['DETERGENT_VOLUME'] = (state.sums['DETERGENT_VOLUME'] || 0) + qty;
+      state.sums['DETERGENT_SALES'] = (state.sums['DETERGENT_SALES'] || 0) + amt;
+    }
     var def = D.get(r.metric_id);
     if (def.aggregation === 'MAX') state.maxima[r.metric_id] = Math.max(state.maxima[r.metric_id] || 0, value);
     else if (def.aggregation === 'SUM_BY_PERIOD') {

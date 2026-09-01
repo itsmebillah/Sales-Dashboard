@@ -113,20 +113,19 @@ Sales, growth, lifting, secondary, stock, stock days, collection, collection pro
 - New, closed, replaced and inactive dealer report.
 - Dealer detail page with hierarchy/territory/depot, trend, products, collections and source records.
 
-## 8. Product Intelligence
+## 8. Product Intelligence & Products-Wise Sales Analysis
 
-KPI strip: quantity, mix, rank, mix shift, selling SR/dealer count where supported, and zero-sale products.
+KPI strip: quantity, sales value, value share %, volume share %, rank, category comparison ratio (Detergent vs Others), mix shift, selling SR/dealer count where supported, and zero-sale products.
 
 Views:
 
-- Product group → product → pack sunburst or drillable bars.
-- Pareto chart with cumulative contribution.
+- Products Wise Sales Analysis workspace with Value vs % Share dual-mode toggles.
+- Category Comparison Visual (Detergent vs Others) comparing monetary revenue value and percentage mix.
+- Product group → product → pack drillable bars and category mix distribution.
+- Pareto chart with cumulative contribution and ABC SKU classification.
 - Product × hierarchy heatmap.
-- Mix-shift slope/dumbbell chart.
-- Top/bottom product rankings with compatible UOM filters.
-- Product detail: trend, distribution, contributing hierarchy and anomalies.
-
-Never aggregate incompatible pack quantities. Product value and margin sections remain disabled until SKU-level values/costs exist.
+- Top/bottom product rankings with value and volume filters.
+- Detailed Product Register table with SKU value, %, volume, and category ranks.
 
 ## 9. Lifting, Stock and Secondary
 

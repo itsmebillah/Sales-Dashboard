@@ -10,10 +10,10 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand"><span class="brand-mark">SI</span><div><strong>Sales Intelligence</strong><small>Executive BI</small></div></div>
       <nav class="nav" aria-label="Dashboard sections">
-        <button class="nav-item active" data-target="overview"><span>Overview</span></button>
+        <button class="nav-item" data-target="overview"><span>Overview</span></button>
         <button class="nav-item" data-target="performance"><span>Performance</span></button>
+        <button class="nav-item" data-target="productAnalysis"><span>Product analysis</span></button>
         <button class="nav-item" data-target="commercial"><span>Commercial flow</span></button>
-        <button class="nav-item" data-target="intelligence"><span>Risk & insights</span></button>
         <button class="nav-item" data-target="reports"><span>Reports</span></button>
       </nav>
       <div class="sidebar-foot"><span class="cert-dot"></span><div><strong>Certified cache</strong><small id="sideStamp">Connecting...</small></div></div>
@@ -64,15 +64,16 @@
           <article class="panel chart-panel"><div class="panel-head"><div><p>Outlook</p><h3>Forecast position</h3></div></div><div class="forecast-stack" id="forecastSummary"></div></article>
         </section>
 
+        <section id="productAnalysis" class="dashboard-section chart-grid">
+          <article class="panel chart-panel wide"><div class="panel-head"><div><p>Category comparison intelligence</p><h3>Products wise sales analysis: Detergent vs Others</h3></div><div class="mode-toggle-group"><button class="toggle-btn active" id="btnValMode">Value ($)</button><button class="toggle-btn" id="btnPctMode">% Share</button></div></div><div class="chart-wrap"><canvas id="detergentComparisonChart" tabindex="0" aria-label="Detergent vs Others Comparison Chart"></canvas><div class="chart-tooltip" id="detergentTooltip"></div></div></article>
+          <article class="panel chart-panel"><div class="panel-head"><div><p>Category breakdown</p><h3>Category share distribution</h3></div></div><div class="chart-wrap"><canvas id="categoryMixChart" aria-label="Category Mix Chart"></canvas><div class="chart-tooltip" id="categoryTooltip"></div></div></article>
+          <article class="panel chart-panel"><div class="panel-head"><div><p>Comparison metrics</p><h3>Detergent vs Others metrics</h3></div></div><div class="forecast-stack" id="detergentMetricsSummary"></div></article>
+        </section>
+
         <section id="commercial" class="dashboard-section chart-grid">
           <article class="panel chart-panel wide"><div class="panel-head"><div><p>Commercial flow</p><h3>Sales, collection & inventory</h3></div></div><div class="chart-wrap"><canvas id="flowChart" tabindex="0" aria-label="Commercial flow chart"></canvas><div class="chart-tooltip" id="flowTooltip"></div></div></article>
           <article class="panel chart-panel"><div class="panel-head"><div><p>Dealer ranking</p><h3>Leading dealers</h3></div></div><div id="dealerRanking" class="ranking-list"></div></article>
           <article class="panel chart-panel"><div class="panel-head"><div><p>Product ranking</p><h3>Leading products</h3></div></div><div id="productRanking" class="ranking-list"></div></article>
-        </section>
-
-        <section id="intelligence" class="dashboard-section insight-grid">
-          <article class="panel"><div class="panel-head"><div><p>Management attention</p><h3>Risk monitor</h3></div><span class="count-pill" id="riskCount">0</span></div><div id="riskList" class="insight-list"></div></article>
-          <article class="panel"><div class="panel-head"><div><p>Decision support</p><h3>AI-ready insights</h3></div><span class="count-pill" id="insightCount">0</span></div><div id="insightList" class="insight-list"></div></article>
         </section>
 
         <section id="reports" class="dashboard-section">

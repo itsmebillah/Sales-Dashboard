@@ -38,7 +38,7 @@ SIP.Utils = (function () {
     var upper = raw.toUpperCase();
     if (!raw || (blankTokens || []).some(function (x) { return upper === String(x).toUpperCase(); })) return null;
     var negative = /^\(.*\)$/.test(raw);
-    var cleaned = raw.replace(/[(),%\s]/g, '').replace(/,/g, '');
+    var cleaned = raw.replace(/[,(),%\s]/g, '');
     if (!/^[-+]?\d*\.?\d+$/.test(cleaned)) return null;
     var parsed = Number(cleaned);
     if (!isFinite(parsed)) return null;
@@ -59,19 +59,25 @@ SIP.Utils = (function () {
     if (!raw) return '';
     if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
     if (/^\d{1,2}$/.test(raw) && contextYear && contextMonth) {
-      return [contextYear, String(contextMonth).padStart(2, '0'), raw.padStart(2, '0')].join('-');
+      return [contextYear, String(contextMonth).padStart(2, '0'), String(raw).padStart(2, '0')].join('-');
     }
     var parsed = new Date(raw);
     return isNaN(parsed.getTime()) ? '' : Utilities.formatDate(parsed, 'GMT', 'yyyy-MM-dd');
   }
 
   function monthContext(rows) {
-    var sample = (rows.slice(0, 5).reduce(function (a, r) { return a.concat(r); }, [])).join(' ');
+    var sample = (rows.slice(0, 10).reduce(function (a, r) { return a.concat(r); }, [])).join(' ');
     var names = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     var match = sample.toUpperCase().match(/(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:TEMBER)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)[^0-9]*(20\d{2}|\d{2})/);
-    if (!match) return { year: null, month: null, periodStart: '', periodEnd: '' };
-    var month = names.indexOf(match[1].slice(0, 3)) + 1;
-    var year = Number(match[2]); if (year < 100) year += 2000;
+    var month = null, year = null;
+    if (match) {
+      month = names.indexOf(match[1].slice(0, 3)) + 1;
+      year = Number(match[2]); if (year < 100) year += 2000;
+    } else {
+      var now = new Date();
+      year = now.getUTCFullYear();
+      month = now.getUTCMonth() + 1;
+    }
     var last = new Date(Date.UTC(year, month, 0)).getUTCDate();
     return { year: year, month: month, periodStart: year + '-' + String(month).padStart(2, '0') + '-01', periodEnd: year + '-' + String(month).padStart(2, '0') + '-' + last };
   }

@@ -3,7 +3,7 @@ window.BI=window.BI||{};
 BI.state={data:null,scope:null,activeLevel:'COMPANY',search:'',page:1,pageSize:15,sortKey:'sales',sortDirection:'desc',chartHits:{}};
 BI.$=id=>document.getElementById(id);
 BI.number=value=>value===null||value===undefined||!Number.isFinite(Number(value))?'—':new Intl.NumberFormat('en-US',{useGrouping:true,minimumFractionDigits:Number(value)%1?2:0,maximumFractionDigits:2}).format(Number(value));
-BI.percent=value=>value===null||value===undefined||!Number.isFinite(Number(value))?'—':new Intl.NumberFormat('en-US',{style:'percent',minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value));
+BI.percent=(value,fallback='—')=>value===null||value===undefined||!Number.isFinite(Number(value))?fallback:new Intl.NumberFormat('en-US',{style:'percent',minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value));
 BI.date=value=>{if(!value)return'Not available';const d=new Date(value);return Number.isNaN(d.getTime())?'Not available':d.toLocaleString('en-US',{year:'numeric',month:'short',day:'2-digit',hour:'2-digit',minute:'2-digit'})};
 BI.escape=value=>String(value==null?'':value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 BI.title=value=>String(value||'').toLowerCase().replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());

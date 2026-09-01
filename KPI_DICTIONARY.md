@@ -2,21 +2,12 @@
 
 ## Phase 4 implementation contract
 
-The authoritative calculation source is `SIP.KpiEngine` v1.0.0. Every supported entity
-level—Company, ASM, RSM, TSO, Territory, Area, SR, Dealer and Product—returns the same KPI contract. Area remains empty until a distinct Area source is governed; Territory is never aliased into Area.
-Aggregation is performed once from accepted Master Dataset records; modules do
-not recalculate formulas independently.
+The authoritative calculation source is `SIP.KpiEngine` v1.0.0. Every supported entity level—Company, ASM, RSM, TSO, Territory, Area, SR, Dealer, Product, and Category—returns the same KPI contract. Area remains empty until a distinct Area source is governed; Territory is never aliased into Area.
+Aggregation is performed once from accepted Master Dataset records; modules do not recalculate formulas independently.
 
-Implemented baseline fields include Sales, Target, Achievement, Gap, forecast,
-forecast achievement, required/average daily Sales, working days, entity counts,
-Collection, Projection, Lifting, Stock, Secondary, orders, comparable growth,
-momentum, Collection flow ratio, product volume/mix, rank, contribution, trend,
-forecast inputs, Present/Absent days, Attendance %, Sales per present day, and certification state.
+Implemented baseline fields include Sales, Target, Achievement, Gap, forecast, forecast achievement, required/average daily Sales, working days, entity counts, Collection, Projection, Lifting, Stock, Secondary, orders, comparable growth, momentum, Collection flow ratio, product volume/mix, category sales value, category volume %, Detergent vs Others comparison, rank, contribution, trend, forecast inputs, Present/Absent days, Attendance %, Sales per present day, and certification state.
 
-Growth is deliberately `null` until the current period is comparable with the
-closed historical period. This prevents MTD Sales from being misrepresented as
-full-month growth. Collection flow metrics remain operational proxies and are
-never labeled receivable recovery or outstanding.
+Growth is deliberately `null` until the current period is comparable with the closed historical period. This prevents MTD Sales from being misrepresented as full-month growth. Collection flow metrics remain operational proxies and are never labeled receivable recovery or outstanding.
 
 ## Rules
 
@@ -86,20 +77,24 @@ These apply independently at ASM, RSM, TSO, Territory, Area, SR, Dealer, Product
 | Parent Dependence | Largest child contribution to parent | Available |
 | Performance Breadth | Share of children growing/achieving target | Available |
 
-## Product performance
+## Product performance & Products-Wise Sales Analysis
 
 | KPI | Definition | Availability |
 |---|---|---|
 | Product Quantity | Sum quantity by product/pack | Available |
-| Product Mix % | Product quantity / compatible group quantity | Available; never mix incompatible UOMs |
-| Product Rank | Rank by quantity within group/pack basis | Available |
-| Product Growth % | Current vs prior comparable product quantity | Conditional on historical product grain |
+| Category Sales Value | Sum Sales Amount for SKU ∈ Category | Available |
+| Category Sales Value Share % | `(Category Sales Value / Total Sales Value) × 100` | Available |
+| Category Volume Share % | `(Category Volume / Total Company Volume) × 100` | Available |
+| Target Category vs Others Ratio | `Target Category Value / Others Value` (e.g. Detergent vs Others) | Available |
+| Product Value Mix % | Product sales value / total sales value | Available |
+| Product Volume Mix % | Product quantity / compatible group quantity | Available; never mix incompatible UOMs |
+| Product Rank | Rank by value or quantity within group/pack basis | Available |
+| Product Growth % | Current vs prior comparable product quantity/value | Conditional on historical product grain |
 | Product Penetration % | Selling SRs/dealers for product / active SRs/dealers | Conditional on product relationship grain |
-| Zero-Sale Product Count | Active products with zero quantity | Available after product master |
-| Top-N Contribution | Top-N product quantity/value / total | Quantity available within compatible UOM |
+| Zero-Sale Product Count | Active products with zero quantity/value | Available after product master |
+| Top-N Contribution | Top-N product quantity/value / total | Available |
 | Mix Shift | Current mix % - prior mix % | Conditional |
-| Product Revenue | Sum SKU sales value | Not available |
-| Product Gross Margin | Revenue - COGS | Not available |
+| Pareto Cumulative Contribution % | `Running Sum(SKU Value) / Total Sales Value × 100` | Available |
 
 ## Lifting, secondary and stock
 

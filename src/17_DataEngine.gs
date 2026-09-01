@@ -12,7 +12,13 @@ SIP.DataEngine = (function () {
     };
     SIP.RefreshTrace.begin(context.batchId);
     var lock = getLock();
-    if (lock && !lock.tryLock(options.lockTimeoutMs || 5000)) throw new Error('Another data-engine build is already running');
+    if (!acquireLock(lock, options.lockTimeoutMs || 20000)) {
+      if (options.forceRefresh) {
+        lock = null; // Proceed with forced refresh under contention
+      } else {
+        throw new Error('A data-engine refresh is currently in progress. Please wait a few seconds and try again.');
+      }
+    }
     try {
       var spreadsheet = options.spreadsheet || openSpreadsheet(config);
       var sources = SIP.SourceReader.readAll(spreadsheet, config, diagnostics);
@@ -73,5 +79,17 @@ SIP.DataEngine = (function () {
     return active;
   }
   function getLock() { return typeof LockService !== 'undefined' ? LockService.getScriptLock() : null; }
+  function acquireLock(lock, timeoutMs) {
+    if (!lock) return true;
+    if (typeof lock.hasLock === 'function' && lock.hasLock()) return true;
+    if (lock.tryLock(timeoutMs || 20000)) return true;
+    for (var retry = 0; retry < 5; retry++) {
+      if (typeof Utilities !== 'undefined' && Utilities.sleep) Utilities.sleep(3000);
+      try {
+        if (lock.tryLock(10000)) return true;
+      } catch (e) {}
+    }
+    return false;
+  }
   return { run: run, get: get };
 }());

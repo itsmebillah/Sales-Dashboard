@@ -22,7 +22,8 @@ function refreshDashboardData() {
     response.refresh={ok:true,durationMs:Date.now()-started,masterCache:masterResult.cache,kpiCache:kpiResult.cache,dashboardCache:dashboardResult.cache};
     return response;
   } catch(error) {
-    return{ok:false,error:{code:error&&error.message==='Another data-engine build is already running'?'REFRESH_IN_PROGRESS':'REFRESH_FAILED',message:error&&error.message?error.message:'Refresh failed'},durationMs:Date.now()-started};
+    var isLock = error && /in progress|already running/i.test(error.message || '');
+    return{ok:false,error:{code:isLock?'REFRESH_IN_PROGRESS':'REFRESH_FAILED',message:error&&error.message?error.message:'Refresh failed'},durationMs:Date.now()-started};
   }
 }
 
@@ -36,3 +37,21 @@ function authorizeProduction() {
   var config=SIP.Config.get(),spreadsheet=SpreadsheetApp.openById(config.spreadsheetId);
   return{authorized:true,spreadsheetName:spreadsheet.getName(),checkedAt:SIP.Utils.nowIso()};
 }
+
+/** Helper function to set up automated 10-minute trigger in Google Apps Script. */
+function setupTenMinuteSyncTrigger() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'runTenMinuteExternalSync') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('runTenMinuteExternalSync')
+    .timeBased()
+    .everyMinutes(10)
+    .create();
+  Logger.log('Automated 10-minute external sync trigger configured successfully.');
+  return { ok: true, message: 'Automated 10-minute external sync trigger configured successfully.' };
+}
+
+

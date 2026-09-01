@@ -2,7 +2,7 @@ SIP.Config = (function () {
   var defaults = {
     spreadsheetId: '1HxVEJqWqIc_xSGIBYJpJBIuHeqTaQiUUJ_Lc7jLKlSY',
     sheets: {
-      sales: 'Sales Data Base Monthly',
+      sales: 'Raw Data',
       previousSales: 'Previous Month Sales',
       lifting: 'Dealer lifting',
       transactions: 'Monthly Projection',
@@ -15,6 +15,18 @@ SIP.Config = (function () {
       attendance: 'Attendance',
       hierarchy: 'Hierarchy',
       relationships: 'Relationship Model'
+    },
+    externalSync: {
+      enabled: true,
+      sourceSpreadsheetId: '19m8lzD1oz1TKviS0zMqLKi-hEC8odGuhh69nSHRUzzE',
+      sourceSheetName: 'Raw Data',
+      sourceStartRow: 4,
+      sourceStartCol: 4,
+      sourceEndCol: 41,
+      targetSpreadsheetId: '1HxVEJqWqIc_xSGIBYJpJBIuHeqTaQiUUJ_Lc7jLKlSY',
+      targetSheetName: 'Raw Data',
+      targetStartRow: 3,
+      targetStartCol: 3
     },
     cache: {
       namespace: 'SIP_MASTER_V1',
