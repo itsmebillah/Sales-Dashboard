@@ -42,7 +42,9 @@ SIP.KpiEngine = (function () {
     var current=calendar&&calendar.current?calendar.current.elapsed:0;
     var due=calendar&&calendar.current?calendar.current.remaining:0,total=calendar&&calendar.current?calendar.current.total:0;
     var maturedSales=sumThrough(state.daily.SALES_AMOUNT||{},calendar&&calendar.current&&calendar.current.dataCutoffDate);
-    var forecast=SIP.ForecastBaseEngine.calculate(state,{sales:maturedSales,currentWorkingDay:current,totalWorkingDay:total,calendar:calendar});
+    var effectiveSales=(maturedSales>0&&current>0)?maturedSales:sales;
+    var effectiveElapsed=(maturedSales>0&&current>0)?current:Math.max(1,calendar&&calendar.current&&(calendar.current.elapsedToDate||calendar.current.elapsed)||1);
+    var forecast=SIP.ForecastBaseEngine.calculate(state,{sales:effectiveSales,currentWorkingDay:effectiveElapsed,totalWorkingDay:total,calendar:calendar});
     var historical=state.periods.HISTORICAL_SALES_AMOUNT||{}, periods=Object.keys(historical).sort();
     var prior=forecast.previousMonthComparableSales||null;
     var growthComparable=prior!==null&&prior!==0;

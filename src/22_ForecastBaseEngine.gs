@@ -1,8 +1,8 @@
 SIP.ForecastBaseEngine = (function () {
   function calculate(state, inputs) {
     var sales = inputs.sales, elapsed = inputs.currentWorkingDay, total = inputs.totalWorkingDay;
-    var ads = elapsed > 0 ? sales / elapsed : null;
-    var runRate = ads !== null && total > 0 ? ads * total : null;
+    var ads = elapsed > 0 ? sales / elapsed : (sales > 0 && total > 0 ? sales : null);
+    var runRate = ads !== null && total > 0 ? ads * total : (sales > 0 ? sales : null);
     var salesSeries=state.daily.SALES_AMOUNT||{},cutoff=inputs.calendar&&inputs.calendar.current&&inputs.calendar.current.dataCutoffDate;
     var momentumBase=momentumResult(salesSeries,workingKeys(salesSeries,inputs.calendar,cutoff));
     var historical = historicalTrend(state.periods.HISTORICAL_SALES_AMOUNT || {});
