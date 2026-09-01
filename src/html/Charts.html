@@ -12,7 +12,7 @@ BI.Charts={
     const canvasEl=BI.$('detergentComparisonChart');if(!canvasEl)return;
     const chart=this.context('detergentComparisonChart');
     const analysis=(BI.state.data&&BI.state.data.products&&BI.state.data.products.detergentAnalysis)||{};
-    const scope=BI.state.scope||(BI.state.data&&BI.state.data.executive)|{};
+    const scope=BI.state.scope||(BI.state.data&&BI.state.data.executive)||{};
     const mode=BI.state.productMode||'VALUE';
     const isVal=mode==='VALUE';
     const targetName=analysis.targetCategory||'Detergent';

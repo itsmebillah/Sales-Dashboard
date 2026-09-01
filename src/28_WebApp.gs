@@ -12,10 +12,10 @@ function include(filename) { return HtmlService.createHtmlOutputFromFile(filenam
 function getCachedDashboardApi() { return getDashboardApi('dashboard'); }
 
 /** Explicit refresh: one parse, one KPI calculation, then publish cache. */
-function refreshDashboardData() {
+function refreshDashboardData(options) {
   var started=Date.now();
   try {
-    var masterResult=runDataEngine();
+    var masterResult=runDataEngine(options);
     if(!masterResult.certification||!masterResult.certification.certified)throw new Error('Data Engine batch did not pass certification');
     var kpiResult=refreshKpiSnapshot(masterResult.master);
     var dashboardResult=publishDashboardApi(kpiResult.snapshot),response={ok:true,data:dashboardResult.data};
@@ -27,7 +27,7 @@ function refreshDashboardData() {
   }
 }
 
-function runDataEngine(){return SIP.DataEngine.run({writeDiagnostics:true});}
+function runDataEngine(options){return SIP.DataEngine.run(Object.assign({writeDiagnostics:true}, options || {}));}
 
 /** Read-only production refresh progress for timeout diagnostics. */
 function getRefreshTrace(){return SIP.RefreshTrace.get();}
