@@ -28,8 +28,20 @@ SIP.Normalizer = (function () {
     };
   }
 
+  function inferCategory(name) {
+    var text = U.text(name).toLowerCase();
+    if (!text) return 'General Products';
+    if (/detergent|dtg|neat\s*bucket|powder|wash\s*powder/i.test(text)) return 'Detergent';
+    if (/toilet|harpic|wc\s*cleaner/i.test(text)) return 'Toilet Cleaner';
+    if (/dish|dishwash|dish\s*bar|dish\s*wash|dish\s*paste|vim/i.test(text)) return 'Dish Care';
+    if (/tiles|tile\s*cleaner|floor|glass\s*cleaner|surface/i.test(text)) return 'Surface Cleaner';
+    if (/soap|handwash|hand\s*wash|beauty\s*soap|body\s*wash/i.test(text)) return 'Personal Care';
+    if (/liquid|cleaner|bleach|softener|fabric/i.test(text)) return 'Fabric & Home Care';
+    return 'Other Products';
+  }
+
   function product(name, pack, group) {
-    var n = U.text(name), p = U.text(pack), g = U.text(group);
+    var n = U.text(name), p = U.text(pack), g = U.text(group) || inferCategory(n);
     var key = [U.normalizeName(n), U.normalizeName(p), U.normalizeName(g)];
     return { id: key[0] ? 'PRODUCT:' + U.hash(key).slice(0, 20) : '', name: n, pack: p, group: g, normalizedName: key[0] };
   }
@@ -63,5 +75,5 @@ SIP.Normalizer = (function () {
     return record;
   }
 
-  return { dealer: dealer, employee: employee, product: product, workingHours: workingHours, masterRecord: masterRecord };
+  return { dealer: dealer, employee: employee, product: product, inferCategory: inferCategory, workingHours: workingHours, masterRecord: masterRecord };
 }());

@@ -55,8 +55,13 @@ SIP.SalesParser = (function () {
         if (qty === null) return;
         var product = N.product(p.name, p.pack, p.group); if (!product.id) return;
         dimensions.products[product.id] = product;
+        var groupId = product.group ? 'PRODUCT_GROUP:' + U.hash(product.group).slice(0, 16) : '';
+        if (groupId) {
+          dimensions.categories = dimensions.categories || {};
+          dimensions.categories[groupId] = { id: groupId, name: product.group, entityType: 'CATEGORY' };
+        }
         records.push(C.metricRecord(base, 'PRODUCT_QUANTITY', qty, '', 'P' + p.index, {
-          productId: product.id, productGroupId: product.group ? 'PRODUCT_GROUP:' + U.hash(product.group).slice(0, 16) : '',
+          productId: product.id, productGroupId: groupId,
           packId: product.pack ? 'PACK:' + U.hash(product.pack).slice(0, 16) : '', quantity: qty, amount: null, unitCode: 'SOURCE_UNIT'
         }));
       });
@@ -229,12 +234,18 @@ SIP.SalesParser = (function () {
         var product = N.product(p.name, '', '');
         if (!product.id) return;
         dimensions.products[product.id] = product;
+        var groupId = product.group ? 'PRODUCT_GROUP:' + U.hash(product.group).slice(0, 16) : '';
+        if (groupId) {
+          dimensions.categories = dimensions.categories || {};
+          dimensions.categories[groupId] = { id: groupId, name: product.group, entityType: 'CATEGORY' };
+        }
         var amount = p.price > 0 ? qty * p.price : null;
         if (amount !== null) rowSalesValue += amount;
         records.push(C.metricRecord(base, 'PRODUCT_QUANTITY', qty, eventDate, 'P' + p.index, {
           productId: product.id,
-          productGroupId: product.group ? 'PRODUCT_GROUP:' + U.hash(product.group).slice(0, 16) : '',
+          productGroupId: groupId,
           productName: p.name,
+          categoryName: product.group,
           quantity: qty,
           amount: amount,
           unitCode: 'SOURCE_UNIT'

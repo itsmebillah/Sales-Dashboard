@@ -100,7 +100,7 @@ SIP.KpiEngine = (function () {
     var totalCompanySales = company ? company.sales || 0 : 0;
     var totalCompanyVolume = rows.reduce(function(acc, x){ return acc + (x.productVolume || 0); }, 0);
     var categories = categoryRows.map(function(cat) {
-      var name = categoryLabels[cat.entityId] || cat.entityId;
+      var name = categoryLabels[cat.entityId] || cat.displayName || cat.name || cat.entityId.replace(/^PRODUCT_GROUP:/i, '');
       var catSales = cat.sales || 0;
       var catVol = cat.productVolume || 0;
       return {
@@ -112,6 +112,27 @@ SIP.KpiEngine = (function () {
         volumePct: totalCompanyVolume > 0 ? catVol / totalCompanyVolume : 0
       };
     }).sort(function(a,b){ return b.sales - a.sales; });
+    if (!categories.length && rows.length) {
+      var catMap = {};
+      rows.forEach(function(p) {
+        var pLabel = (labels.PRODUCT && labels.PRODUCT[p.entityId]) || p.name || p.entityId;
+        var groupName = p.group || (SIP.Normalizer.inferCategory ? SIP.Normalizer.inferCategory(pLabel) : 'General Products');
+        catMap[groupName] = catMap[groupName] || { name: groupName, sales: 0, volume: 0 };
+        catMap[groupName].sales += (p.sales || 0);
+        catMap[groupName].volume += (p.productVolume || 0);
+      });
+      categories = Object.keys(catMap).map(function(k) {
+        var c = catMap[k];
+        return {
+          id: 'PRODUCT_GROUP:' + SIP.Utils.hash(k).slice(0, 16),
+          name: c.name,
+          sales: c.sales,
+          volume: c.volume,
+          salesPct: totalCompanySales > 0 ? c.sales / totalCompanySales : 0,
+          volumePct: totalCompanyVolume > 0 ? c.volume / totalCompanyVolume : 0
+        };
+      }).sort(function(a,b){ return b.sales - a.sales; });
+    }
     var detergentSales = company ? company.detergentSales || 0 : 0;
     var detergentVol = company ? company.detergentVolume || 0 : 0;
     var othersSales = Math.max(0, totalCompanySales - detergentSales);
