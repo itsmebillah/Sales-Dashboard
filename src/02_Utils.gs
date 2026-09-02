@@ -79,7 +79,8 @@ SIP.Utils = (function () {
       month = now.getUTCMonth() + 1;
     }
     var last = new Date(Date.UTC(year, month, 0)).getUTCDate();
-    return { year: year, month: month, periodStart: year + '-' + String(month).padStart(2, '0') + '-01', periodEnd: year + '-' + String(month).padStart(2, '0') + '-' + last };
+    return { year: year, month: month, periodStart: year + '-' + String(month).padStart(2, '0') + '-01', periodEnd: year + '-' + String(month).padStart(2, '0') + '-' + last,
+      explicit: !!match, source: match ? 'CONTENT' : 'RUNTIME_FALLBACK' };
   }
 
   function hash(parts) {

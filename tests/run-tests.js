@@ -623,6 +623,75 @@ test('calculates accurate sales revenue from product line items and ignores plac
   ok(dealers.some(d=>d.name==='Actual Dealer'));
 });
 
+test('parses the production Raw Data contract without converting sales into products or targets',()=>{
+  const priceRow=Array(40).fill('');priceRow[0]="August'26";priceRow[4]=100;priceRow[5]=200;
+  const header=Array(40).fill('');
+  header[0]='Unique ID';header[1]='TSO ID';header[2]='SR ID ';header[3]='Date';
+  header[4]='Product A (Piece)';header[5]='Product B (Piece)';header[38]='No. of Order';header[39]='বিক্রয়ের পরিমাণ (টাকা)';
+  const rows=[priceRow,header,
+    ['3018-5','',3018,5,2,1,...Array(32).fill(''),7,350],
+    ['3018-6','',3018,6,...Array(34).fill(''),4,120]
+  ];
+  const diagnostics=new SIP.Diagnostics(),context={batchId:'RAW_PROD',ingestedAt:'2026-09-02T00:00:00Z',config:SIP.Config.get(),diagnostics};
+  const parsed=SIP.SalesParser.parse({definition:{id:'SRC_SALES_MONTHLY',name:'Raw Data'},values:rows},context);
+  const sales=parsed.records.filter(r=>r.metric_id==='SALES_AMOUNT');
+  equal(sales.length,2);equal(sales[0].numeric_value,350);equal(sales[1].numeric_value,120);
+  equal(sales[0].event_date,'2026-08-05');equal(sales[1].event_date,'2026-08-06');
+  equal(parsed.records.filter(r=>r.metric_id==='TARGET_AMOUNT').length,0);
+  equal(parsed.records.filter(r=>r.metric_id==='ORDER_COUNT').reduce((n,r)=>n+r.numeric_value,0),11);
+  equal(parsed.records.filter(r=>r.metric_id==='PRODUCT_QUANTITY').length,2);
+  equal(Object.values(parsed.dimensions.products).some(p=>/বিক্রয়ের/.test(p.name)),false);
+  equal(parsed.metadata.period.periodStart,'2026-08-01');equal(parsed.metadata.monthlyWorkingDays,null);
+  equal(parsed.metadata.statedSalesTotal,470);equal(parsed.metadata.calculatedSalesTotal,400);
+  equal(parsed.metadata.salesVariance,-70);equal(parsed.metadata.unallocatedSalesRows,1);
+  equal(parsed.metadata.salesAuthority,'STATED_SALES');
+  ok(diagnostics.issues.some(x=>x.code==='RAW_SALES_CALC_VARIANCE'&&x.severity==='WARN'));
+  ok(!diagnostics.issues.some(x=>x.code==='SALES_PERIOD_NOT_FOUND'));
+});
+
+test('rejects Raw Data without an explicit source reporting period',()=>{
+  const prices=Array(40).fill('');prices[4]=100;
+  const header=Array(40).fill('');header[2]='SR ID';header[3]='Date';header[4]='Product';header[39]='বিক্রয়ের পরিমাণ (টাকা)';
+  const row=Array(40).fill('');row[2]='SR1';row[3]=1;row[4]=1;row[39]=100;
+  const diagnostics=new SIP.Diagnostics(),context={batchId:'RAW_NO_PERIOD',ingestedAt:'2026-09-02T00:00:00Z',config:SIP.Config.get(),diagnostics};
+  SIP.SalesParser.parse({definition:{id:'SRC_SALES_MONTHLY',name:'Raw Data'},values:[prices,header,row]},context);
+  ok(diagnostics.issues.some(x=>x.code==='SALES_PERIOD_NOT_FOUND'&&x.severity==='ERROR'));
+});
+
+test('keeps target amounts authoritative without heuristic unit conversion',()=>{
+  const records=[];
+  const add=(id,metric,value,extra={})=>records.push(SIP.Normalizer.masterRecord(Object.assign({recordId:id,sourceDataset:'T',sourceRecordId:id,contractId:'T',moduleId:'SALES',metricId:metric,eventDate:'2026-08-01',periodStart:'2026-08-01',numericValue:value,qualityStatus:'VALID',srId:'EMPLOYEE:1'},extra)));
+  add('S','SALES_AMOUNT',5000);add('T','TARGET_AMOUNT',100,{recordType:'PLAN'});add('Q','PRODUCT_QUANTITY',10,{productId:'PRODUCT:1',quantity:10});
+  const snapshot=SIP.KpiEngine.calculate({schemaVersion:'1.0.0',batchId:'TARGET_AUTH',currentPeriodStart:'2026-08-01',records,qualityFlags:[]});
+  equal(snapshot.executive.target,100);equal(snapshot.executive.achievementPct,50);
+});
+
+test('requires error-free persisted batches before certification and publication',()=>{
+  const diagnostics=new SIP.Diagnostics();diagnostics.issue('ERROR','BUSINESS_RULE_FAILED','failed business rule');
+  const gate=SIP.CertificationEngine.assess({batchId:'PROVISIONAL',records:[{}],calendar:{rows:[{}]}},diagnostics,{verified:true});
+  equal(gate.status,'PROVISIONAL');equal(gate.certified,false);
+  let blocked=false;
+  try{sandbox.publishDashboardApi({quality:{certification:'PROVISIONAL'}});}catch(_){blocked=true;}
+  ok(blocked,'provisional snapshots must not replace the certified dashboard cache');
+});
+
+test('external sync carries the source workbook month into Raw Data A1',()=>{
+  const originalOpen=sandbox.SpreadsheetApp.openById,actions={};
+  const source={getName:()=>"August'26",getSheetByName:()=>({getLastRow:()=>4,getRange:()=>({getValues:()=>[Array(38).fill(1)]})})};
+  const targetSheet={getLastRow:()=>2,getRange:(row,col,rowCount,colCount)=>({
+    clearContent:()=>{actions.cleared=[row,col,rowCount,colCount];},
+    setValues:values=>{actions.values=values;},
+    setValue:value=>{actions.marker={row,col,value};}
+  })};
+  const target={getSheetByName:()=>targetSheet,insertSheet:()=>targetSheet};
+  sandbox.SpreadsheetApp.openById=id=>id==='SOURCE'?source:target;
+  try{
+    const result=SIP.ExternalSync.sync({sourceSpreadsheetId:'SOURCE',targetSpreadsheetId:'TARGET',force:true});
+    ok(result.ok);equal(result.sourcePeriodLabel,"August'26");equal(result.targetRange,'C3:AN3');
+    equal(actions.marker.row,1);equal(actions.marker.col,1);equal(actions.marker.value,"August'26");
+  }finally{sandbox.SpreadsheetApp.openById=originalOpen;}
+});
+
 process.on('exit', () => {
   if (!process.exitCode) console.log(`\n${passed} tests passed.`);
 });

@@ -175,13 +175,18 @@ SIP.SalesParser = (function () {
   function parseRawDataFormat(source, context) {
     var started = Date.now(), rows = source.values, diag = context.diagnostics, id = source.definition.id;
     var priceRow = rows[0] || [], nameRow = rows[1] || [];
+    var salesIndex = findRawHeader(nameRow, ['SALES_AMOUNT', 'TOTAL_SALES', 'SALES', 'SALES_OF'], [/বিক্রয়ের\s*পরিমাণ/i]);
+    var targetIndex = findRawHeader(nameRow, ['TARGET', 'MONTHLY_TGT_PRODUCT_WISE_VALUE', 'MONTHLY_TGT', 'TGT', 'TARGET_AMOUNT'], []);
+    var orderIndex = findRawHeader(nameRow, ['NO_OF_ORDER', 'ORDER_COUNT', 'ORDERS'], []);
     var productMeta = [];
     var ignoreHeaderKeys = /^(total|sales|target|tgt|monthly\s*wd|wd|order|no\.\s*of\s*order|avg|working\s*hour|id|sr|rsm|tso|asm|dealer|area|point|sl|cd|code|date|designation|desig)$/i;
     for (var col = 4; col < nameRow.length; col++) {
+      if (col === salesIndex || col === targetIndex || col === orderIndex) continue;
       var pName = U.text(nameRow[col]);
       if (!pName || ignoreHeaderKeys.test(pName)) continue;
       if (/^(sl|point|dealer|sr|id|sr_id|sr_name|rsm|tso|asm|area|territory|total|target|tgt|monthly_tgt)$/i.test(pName)) continue;
-      var pPrice = U.number(priceRow[col], context.config.parser.blankTokens) || 0;
+      var pPrice = U.number(priceRow[col], context.config.parser.blankTokens);
+      if (pPrice === null || pPrice <= 0) continue;
       productMeta.push({ index: col, name: pName, price: pPrice });
     }
 
@@ -193,8 +198,10 @@ SIP.SalesParser = (function () {
     var headerRowIndex = header ? header.rowIndex : 2;
     var columns = header ? header.columns : {};
     var period = U.monthContext(rows);
+    if (!period.explicit) diag.issue('ERROR', 'SALES_PERIOD_NOT_FOUND', 'Raw Data has no explicit report month/year; runtime month fallback is not safe', { sourceId: id });
 
     var records = [], dimensions = { employees: {}, dealers: {}, products: {} }, ignored = 0, loaded = 0;
+    var statedSalesTotal = 0, calculatedSalesTotal = 0, statedSalesRows = 0, salesVarianceRows = 0, unallocatedSalesRows = 0, maxSalesVariance = 0;
     for (var r = headerRowIndex + 1; r < rows.length; r++) {
       var row = rows[r];
       if (!row || !row.length) { ignored++; continue; }
@@ -225,7 +232,7 @@ SIP.SalesParser = (function () {
       if (dealer.id) dimensions.dealers[dealer.id] = dealer;
 
       var base = baseRecord(context, source, row, r, period, employee, dealer, columns);
-      var eventDate = U.isoDate(C.value(row, columns, ['DATE', 'EVENT_DATE'])) || period.periodStart;
+      var eventDate = U.isoDate(C.value(row, columns, ['DATE', 'EVENT_DATE']), period.year, period.month) || period.periodStart;
 
       var rowSalesValue = 0;
       productMeta.forEach(function (p) {
@@ -252,29 +259,51 @@ SIP.SalesParser = (function () {
         }));
       });
 
-      var explicitSales = C.value(row, columns, ['SALES_AMOUNT', 'TOTAL_SALES', 'SALES', 'SALES_OF']);
-      var salesVal = null;
-      if (rowSalesValue > 0) {
-        salesVal = rowSalesValue;
-      } else {
-        if (explicitSales === '' && row.length > 38) explicitSales = row[38]; // Column AM (index 38)
-        salesVal = U.number(explicitSales, context.config.parser.blankTokens);
+      var explicitSales = salesIndex >= 0 ? row[salesIndex] : C.value(row, columns, ['SALES_AMOUNT', 'TOTAL_SALES', 'SALES', 'SALES_OF']);
+      var statedSales = U.number(explicitSales, context.config.parser.blankTokens);
+      var salesVal = statedSales !== null ? statedSales : (rowSalesValue > 0 ? rowSalesValue : null);
+      calculatedSalesTotal += rowSalesValue;
+      if (statedSales !== null) {
+        statedSalesRows++; statedSalesTotal += statedSales;
+        var salesVariance = rowSalesValue - statedSales;
+        if (Math.abs(salesVariance) > 0.01) salesVarianceRows++;
+        if (rowSalesValue === 0 && statedSales > 0) unallocatedSalesRows++;
+        maxSalesVariance = Math.max(maxSalesVariance, Math.abs(salesVariance));
       }
       if (salesVal !== null) {
         records.push(C.metricRecord(base, 'SALES_AMOUNT', salesVal, eventDate, 'RAW_SALES'));
       }
 
-      var explicitTarget = C.value(row, columns, ['TARGET', 'MONTHLY_TGT_PRODUCT_WISE_VALUE', 'MONTHLY_TGT', 'TGT', 'TARGET_AMOUNT']);
-      if (!explicitTarget && row.length > 39) explicitTarget = row[39]; // Column AN (index 39)
+      var explicitTarget = targetIndex >= 0 ? row[targetIndex] : C.value(row, columns, ['TARGET', 'MONTHLY_TGT_PRODUCT_WISE_VALUE', 'MONTHLY_TGT', 'TGT', 'TARGET_AMOUNT']);
       var targetVal = U.number(explicitTarget, context.config.parser.blankTokens);
       if (targetVal !== null && targetVal > 0) {
         records.push(C.metricRecord(base, 'TARGET_AMOUNT', targetVal, eventDate, 'RAW_TARGET', { recordType: 'PLAN' }));
       }
+      var orderVal = U.number(orderIndex >= 0 ? row[orderIndex] : C.value(row, columns, ['NO_OF_ORDER', 'ORDER_COUNT', 'ORDERS']), context.config.parser.blankTokens);
+      if (orderVal !== null) records.push(C.metricRecord(base, 'ORDER_COUNT', orderVal, eventDate, 'RAW_ORDERS'));
       loaded++;
     }
 
+    if (statedSalesRows && salesVarianceRows) diag.issue('WARN', 'RAW_SALES_CALC_VARIANCE', 'Stated sales differ from quantity multiplied by reference price; stated sales remain authoritative', {
+      sourceId: id, statedSalesRows: statedSalesRows, varianceRows: salesVarianceRows, unallocatedSalesRows: unallocatedSalesRows,
+      statedSalesTotal: statedSalesTotal, calculatedSalesTotal: calculatedSalesTotal,
+      variance: calculatedSalesTotal - statedSalesTotal, maxAbsoluteRowVariance: maxSalesVariance, policy: 'STATED_SALES_AUTHORITATIVE'
+    });
+
     var s = diag.source(id); s.rowsLoaded = loaded; s.rowsIgnored = ignored; s.recordsEmitted = records.length; s.executionMs += Date.now() - started;
-    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, productColumns: productMeta, monthlyWorkingDays: 26, salesControlTotal: null } };
+    return { sourceId: id, records: records, dimensions: dimensions, metadata: { header: header, period: period, productColumns: productMeta, monthlyWorkingDays: null,
+      salesControlTotal: statedSalesRows ? statedSalesTotal : null, statedSalesTotal: statedSalesRows ? statedSalesTotal : null,
+      calculatedSalesTotal: calculatedSalesTotal, salesVariance: statedSalesRows ? calculatedSalesTotal - statedSalesTotal : null,
+      salesVarianceRows: salesVarianceRows, unallocatedSalesRows: unallocatedSalesRows, salesAuthority: statedSalesRows ? 'STATED_SALES' : 'CALCULATED_PRODUCT_VALUE' } };
+  }
+
+  function findRawHeader(row, aliases, patterns) {
+    for (var i = 0; i < row.length; i++) {
+      var key = U.headerKey(row[i]), label = U.canonicalText(row[i]);
+      if (aliases.indexOf(key) >= 0) return i;
+      for (var p = 0; p < patterns.length; p++) if (patterns[p].test(label)) return i;
+    }
+    return -1;
   }
 
   function empty(id) { return { sourceId: id, records: [], dimensions: { employees: {}, dealers: {}, products: {} }, metadata: {} }; }

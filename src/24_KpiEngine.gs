@@ -37,8 +37,7 @@ SIP.KpiEngine = (function () {
     var sum=state.sums,max=state.maxima;
     var sales=sum.SALES_AMOUNT||0,rawTarget=sum.TARGET_AMOUNT||0,collection=sum.COLLECTION_AMOUNT||0;
     var totalVolume=sum.PRODUCT_QUANTITY||0;
-    var avgPrice=(sales>0&&totalVolume>0)?sales/totalVolume:0;
-    var target=(rawTarget>0&&avgPrice>0&&sales>rawTarget*10)?rawTarget*avgPrice:rawTarget;
+    var target=rawTarget;
     var current=calendar&&calendar.current?calendar.current.elapsed:0;
     var due=calendar&&calendar.current?calendar.current.remaining:0,total=calendar&&calendar.current?calendar.current.total:0;
     var maturedSales=sumThrough(state.daily.SALES_AMOUNT||{},calendar&&calendar.current&&calendar.current.dataCutoffDate);

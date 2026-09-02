@@ -1,7 +1,7 @@
 SIP.ExternalSync = (function () {
   /**
    * High-performance 2D array sync copying external sales data cleanly into core sheet.
-   * Copies Source 'Raw Data' D4:AO into Target 'Raw Data' D3:AO automatically.
+   * Copies Source 'Raw Data' D4:AO into Target 'Raw Data' C3:AN automatically.
    */
   function sync(options) {
     options = options || {};
@@ -46,7 +46,7 @@ SIP.ExternalSync = (function () {
 
       var values = sourceSheet.getRange(sRow, sCol, numRows, numCols).getValues();
       if (!values || !values.length) {
-        throw new Error('No values found in source range D' + sRow + ':AO in sheet ' + sourceTab);
+        throw new Error('No values found in source range ' + columnLabel(sCol) + sRow + ':' + columnLabel(eCol) + ' in sheet ' + sourceTab);
       }
 
       var targetSs = SpreadsheetApp.openById(targetId);
@@ -54,6 +54,11 @@ SIP.ExternalSync = (function () {
       if (!targetSheet) {
         targetSheet = targetSs.insertSheet(targetTab);
       }
+
+      // Preserve the source reporting period inside the copied dataset. The Raw
+      // Data parser must never infer a historical source month from runtime time.
+      var sourceTitle = sourceSs.getName ? sourceSs.getName() : '';
+      if (sourceTitle) targetSheet.getRange(1, 1).setValue(sourceTitle);
 
       var targetLastRow = targetSheet.getLastRow();
       var clearRows = Math.max(numRows, targetLastRow >= tRow ? (targetLastRow - tRow + 1) : 1);
@@ -70,8 +75,9 @@ SIP.ExternalSync = (function () {
         targetTab: targetTab,
         rowsCopied: numRows,
         colsCopied: numCols,
-        sourceRange: 'D' + sRow + ':AO' + lastRow,
-        targetRange: 'D' + tRow + ':AO' + (tRow + numRows - 1),
+        sourceRange: columnLabel(sCol) + sRow + ':' + columnLabel(eCol) + lastRow,
+        targetRange: columnLabel(tCol) + tRow + ':' + columnLabel(tCol + numCols - 1) + (tRow + numRows - 1),
+        sourcePeriodLabel: sourceTitle,
         executionMs: elapsedMs
       };
     } catch (err) {
@@ -79,6 +85,16 @@ SIP.ExternalSync = (function () {
     } finally {
       if (lock) lock.releaseLock();
     }
+  }
+
+  function columnLabel(column) {
+    var out = '';
+    while (column > 0) {
+      column--;
+      out = String.fromCharCode(65 + (column % 26)) + out;
+      column = Math.floor(column / 26);
+    }
+    return out;
   }
 
   return { sync: sync };

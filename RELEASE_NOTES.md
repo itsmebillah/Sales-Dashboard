@@ -1,5 +1,15 @@
 # Release Notes
 
+## 3.7.2 - Raw Data Contract and Certification Repair
+
+- Preserved the upstream workbook month during external Raw Data synchronization and rejected unsafe runtime-month inference.
+- Parsed day-number fields in the explicit source month instead of collapsing all observations onto period start.
+- Made the stated Bengali sales-amount column authoritative, excluded it from product quantities, restored order-count facts, and stopped treating sales as target.
+- Added aggregate stated-versus-calculated sales reconciliation while retaining product-price calculations for allocation analysis.
+- Removed target unit guessing and the unsupported 26-working-day constant from the Raw Data path.
+- Required an error-free persisted batch for certification, dashboard publication, reads, and maintenance retention.
+- Added five production-contract regression groups; the suite now contains 51 passing tests.
+
 ## 3.7.1 — Bounded Logical Master Dataset
 
 - Confirmed that the dashboard, KPI engine, filters, hierarchy, Attendance, reports, refresh and certification use the logical in-memory/cache Master Dataset and never read the physical Sheet tab.

@@ -18,7 +18,7 @@ SIP.MaintenanceEngine=(function(){
     if(!lock.tryLock(options.lockTimeoutMs||1000))return{ok:false,status:'SKIPPED_ACTIVE_REFRESH',at:SIP.Utils.nowIso()};
     try{
       var active=SIP.DurableCache.get();
-      if(!active||!active.batchId||!active.quality||(active.quality.certification!=='CERTIFIED'&&active.quality.certification!=='PROVISIONAL'))return{ok:false,status:'SKIPPED_NO_CERTIFIED_CACHE',at:SIP.Utils.nowIso()};
+      if(!active||!active.batchId||!active.quality||active.quality.certification!=='CERTIFIED')return{ok:false,status:'SKIPPED_NO_CERTIFIED_CACHE',at:SIP.Utils.nowIso()};
       var spreadsheet=SpreadsheetApp.openById(config.spreadsheetId),before=inventory(spreadsheet);
       var batches=pruneBatches(spreadsheet.getSheetByName(config.sheets.importBatches),active.batchId,config.maintenance);
       var quality=pruneQuality(spreadsheet.getSheetByName(config.sheets.qualityResults),batches.retainedBatchIds);
