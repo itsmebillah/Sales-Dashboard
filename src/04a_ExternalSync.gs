@@ -1,7 +1,7 @@
 SIP.ExternalSync = (function () {
   /**
    * High-performance 2D array sync copying external sales data cleanly into core sheet.
-   * Copies Source 'Raw Data' D4:AO into Target 'Raw Data' C3:AN automatically.
+   * Copies Source 'Sales Posting' C3:AN into Target 'Raw Data' C3:AN automatically.
    */
   function sync(options) {
     options = options || {};
@@ -11,14 +11,14 @@ SIP.ExternalSync = (function () {
       return { ok: true, skipped: true, message: 'External sync disabled.' };
     }
 
-    var sourceId = options.sourceSpreadsheetId || syncConf.sourceSpreadsheetId || '19m8lzD1oz1TKviS0zMqLKi-hEC8odGuhh69nSHRUzzE';
-    var sourceTab = options.sourceSheetName || syncConf.sourceSheetName || 'Raw Data';
+    var sourceId = options.sourceSpreadsheetId || syncConf.sourceSpreadsheetId || '1RElsFupKhds4iKLfZ9epwhSfaNoTi_g69QLESMjbbQg';
+    var sourceTab = options.sourceSheetName || syncConf.sourceSheetName || 'Sales Posting';
     var targetId = options.targetSpreadsheetId || syncConf.targetSpreadsheetId || config.spreadsheetId;
     var targetTab = options.targetSheetName || syncConf.targetSheetName || config.sheets.sales;
 
-    var sRow = options.sourceStartRow || syncConf.sourceStartRow || 4;
-    var sCol = options.sourceStartCol || syncConf.sourceStartCol || 4; // Column D
-    var eCol = options.sourceEndCol || syncConf.sourceEndCol || 41;   // Column AO
+    var sRow = options.sourceStartRow || syncConf.sourceStartRow || 3;
+    var sCol = options.sourceStartCol || syncConf.sourceStartCol || 3; // Column C
+    var eCol = options.sourceEndCol || syncConf.sourceEndCol || 40;   // Column AN
 
     var tRow = options.targetStartRow || syncConf.targetStartRow || 3;
     var tCol = options.targetStartCol || syncConf.targetStartCol || 3; // Column C

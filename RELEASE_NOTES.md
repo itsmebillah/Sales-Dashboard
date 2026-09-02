@@ -1,5 +1,11 @@
 # Release Notes
 
+## 3.7.3 - Sales Posting Source Migration
+
+- Switched the external source to spreadsheet `1RElsFupKhds4iKLfZ9epwhSfaNoTi_g69QLESMjbbQg`.
+- Syncs `Sales Posting!C3:AN` into the existing `Sales Dashboard` workbook at `Raw Data!C3:AN`.
+- Preserves the existing destination spreadsheet and production web-app deployment URL.
+
 ## 3.7.2 - Raw Data Contract and Certification Repair
 
 - Preserved the upstream workbook month during external Raw Data synchronization and rejected unsafe runtime-month inference.

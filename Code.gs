@@ -10,7 +10,7 @@
  */
 /**
  * 30-Minute automated sync & dashboard refresh execution function.
- * Copies external 'Raw Data' D4:AO from spreadsheet 19m8lzD1oz1TKviS0zMqLKi-hEC8odGuhh69nSHRUzzE
+ * Copies external 'Sales Posting' C3:AN from spreadsheet 1RElsFupKhds4iKLfZ9epwhSfaNoTi_g69QLESMjbbQg
  * into 'Raw Data' C3:AN in this workbook and updates certified dashboard cache.
  */
 function runThirtyMinuteSyncAndRefresh() {
@@ -70,7 +70,7 @@ function onOpen() {
     ui.createMenu('⚡ Sales Dashboard')
       .addItem('🔥 Hard Refresh (Force Clear Cache & Rebuild)', 'runHardRefresh')
       .addItem('💾 Add Cache Manually (Dashboard Cache Tab)', 'addCacheManually')
-      .addItem('📥 Run External Sync (D4:AO -> C3:AN) & Refresh', 'runThirtyMinuteSyncAndRefresh')
+      .addItem('📥 Run External Sync (Sales Posting C3:AN) & Refresh', 'runThirtyMinuteSyncAndRefresh')
       .addSeparator()
       .addItem('⚙️ One-Click Platform Setup', 'runPlatformSetup')
       .addItem('🕒 Setup 30-Min Auto Sync Trigger', 'setupThirtyMinuteSyncTrigger')
@@ -241,5 +241,4 @@ function setupPlatform() { return runPlatformSetup(); }
 function setupDashboard() { return runPlatformSetup(); }
 function addDashboardCacheManually() { return addCacheManually(); }
 function addCacheManuallyToDashboardCacheTab() { return addCacheManually(); }
-
 

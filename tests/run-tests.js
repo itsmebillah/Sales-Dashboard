@@ -677,7 +677,7 @@ test('requires error-free persisted batches before certification and publication
 
 test('external sync carries the source workbook month into Raw Data A1',()=>{
   const originalOpen=sandbox.SpreadsheetApp.openById,actions={};
-  const source={getName:()=>"August'26",getSheetByName:()=>({getLastRow:()=>4,getRange:()=>({getValues:()=>[Array(38).fill(1)]})})};
+  const source={getName:()=>"August'26",getSheetByName:()=>({getLastRow:()=>3,getRange:()=>({getValues:()=>[Array(38).fill(1)]})})};
   const targetSheet={getLastRow:()=>2,getRange:(row,col,rowCount,colCount)=>({
     clearContent:()=>{actions.cleared=[row,col,rowCount,colCount];},
     setValues:values=>{actions.values=values;},
@@ -690,6 +690,14 @@ test('external sync carries the source workbook month into Raw Data A1',()=>{
     ok(result.ok);equal(result.sourcePeriodLabel,"August'26");equal(result.targetRange,'C3:AN3');
     equal(actions.marker.row,1);equal(actions.marker.col,1);equal(actions.marker.value,"August'26");
   }finally{sandbox.SpreadsheetApp.openById=originalOpen;}
+});
+
+test('uses Sales Posting C3:AN as the governed external source',()=>{
+  const config=SIP.Config.get().externalSync;
+  equal(config.sourceSpreadsheetId,'1RElsFupKhds4iKLfZ9epwhSfaNoTi_g69QLESMjbbQg');
+  equal(config.sourceSheetName,'Sales Posting');
+  equal(config.sourceStartRow,3);equal(config.sourceStartCol,3);equal(config.sourceEndCol,40);
+  equal(config.targetSheetName,'Raw Data');equal(config.targetStartRow,3);equal(config.targetStartCol,3);
 });
 
 process.on('exit', () => {
