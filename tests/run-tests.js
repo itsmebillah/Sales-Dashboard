@@ -692,11 +692,28 @@ test('external sync carries the source workbook month into Raw Data A1',()=>{
   }finally{sandbox.SpreadsheetApp.openById=originalOpen;}
 });
 
+test('external sync derives the month from source ERP OrderDate when title is generic',()=>{
+  const originalOpen=sandbox.SpreadsheetApp.openById,actions={};
+  const salesPosting={getLastRow:()=>3,getRange:()=>({getValues:()=>[Array(38).fill(1)]})};
+  const rawData={getLastRow:()=>4,getRange:()=>({getValues:()=>[[new Date(2026,7,1)],[new Date(2026,7,15)],[new Date(2026,7,31)]]})};
+  const source={getName:()=>"Sales Order Processing System",getSheetByName:name=>name==='Sales Posting'?salesPosting:rawData};
+  const targetSheet={getLastRow:()=>2,getRange:(row,col,rowCount,colCount)=>({
+    clearContent:()=>{},setValues:()=>{},setValue:value=>{actions.marker={row,col,value};}
+  })};
+  sandbox.SpreadsheetApp.openById=id=>id==='SOURCE'?source:{getSheetByName:()=>targetSheet};
+  try{
+    const result=SIP.ExternalSync.sync({sourceSpreadsheetId:'SOURCE',targetSpreadsheetId:'TARGET',force:true});
+    ok(result.ok);equal(result.sourcePeriodLabel,"August'26");
+    equal(result.sourcePeriodSource,'Raw Data!V2:V4');equal(actions.marker.value,"August'26");
+  }finally{sandbox.SpreadsheetApp.openById=originalOpen;}
+});
+
 test('uses Sales Posting C3:AN as the governed external source',()=>{
   const config=SIP.Config.get().externalSync;
   equal(config.sourceSpreadsheetId,'1RElsFupKhds4iKLfZ9epwhSfaNoTi_g69QLESMjbbQg');
   equal(config.sourceSheetName,'Sales Posting');
   equal(config.sourceStartRow,3);equal(config.sourceStartCol,3);equal(config.sourceEndCol,40);
+  equal(config.periodSourceSheetName,'Raw Data');equal(config.periodSourceStartRow,2);equal(config.periodSourceDateCol,22);
   equal(config.targetSheetName,'Raw Data');equal(config.targetStartRow,3);equal(config.targetStartCol,3);
 });
 

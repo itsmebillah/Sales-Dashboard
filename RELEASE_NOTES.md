@@ -1,5 +1,11 @@
 # Release Notes
 
+## 3.7.4 - External Sync Period Repair
+
+- Derives the reporting month from the source ERP `Raw Data` order dates when the source workbook title has no month/year.
+- Prevents a generic source title from replacing the required period marker in destination `Raw Data!A1`.
+- Keeps the existing spreadsheet and production web-app deployment URL unchanged.
+
 ## 3.7.3 - Sales Posting Source Migration
 
 - Switched the external source to spreadsheet `1RElsFupKhds4iKLfZ9epwhSfaNoTi_g69QLESMjbbQg`.

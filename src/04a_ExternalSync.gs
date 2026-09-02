@@ -55,10 +55,15 @@ SIP.ExternalSync = (function () {
         targetSheet = targetSs.insertSheet(targetTab);
       }
 
-      // Preserve the source reporting period inside the copied dataset. The Raw
-      // Data parser must never infer a historical source month from runtime time.
       var sourceTitle = sourceSs.getName ? sourceSs.getName() : '';
-      if (sourceTitle) targetSheet.getRange(1, 1).setValue(sourceTitle);
+      // Sales Posting exposes day-of-month only. Resolve its month/year from an
+      // explicit title first, then from the source ERP OrderDate column. Never
+      // replace Raw Data!A1 with a generic workbook title.
+      var sourcePeriod = resolveSourcePeriod(sourceSs, sourceTitle, syncConf, options);
+      if (!sourcePeriod.label) {
+        throw new Error('Could not resolve one explicit reporting month from the source workbook');
+      }
+      targetSheet.getRange(1, 1).setValue(sourcePeriod.label);
 
       var targetLastRow = targetSheet.getLastRow();
       var clearRows = Math.max(numRows, targetLastRow >= tRow ? (targetLastRow - tRow + 1) : 1);
@@ -77,7 +82,8 @@ SIP.ExternalSync = (function () {
         colsCopied: numCols,
         sourceRange: columnLabel(sCol) + sRow + ':' + columnLabel(eCol) + lastRow,
         targetRange: columnLabel(tCol) + tRow + ':' + columnLabel(tCol + numCols - 1) + (tRow + numRows - 1),
-        sourcePeriodLabel: sourceTitle,
+        sourcePeriodLabel: sourcePeriod.label,
+        sourcePeriodSource: sourcePeriod.source,
         executionMs: elapsedMs
       };
     } catch (err) {
@@ -95,6 +101,54 @@ SIP.ExternalSync = (function () {
       column = Math.floor(column / 26);
     }
     return out;
+  }
+
+  function resolveSourcePeriod(sourceSs, sourceTitle, syncConf, options) {
+    var titleLabel = periodLabelFromText(sourceTitle);
+    if (titleLabel) return { label: titleLabel, source: 'WORKBOOK_TITLE' };
+
+    var sheetName = options.periodSourceSheetName || syncConf.periodSourceSheetName || 'Raw Data';
+    var startRow = options.periodSourceStartRow || syncConf.periodSourceStartRow || 2;
+    var dateCol = options.periodSourceDateCol || syncConf.periodSourceDateCol || 22;
+    var sheet = sourceSs.getSheetByName(sheetName);
+    if (!sheet) return { label: '', source: '' };
+    var lastRow = sheet.getLastRow();
+    if (lastRow < startRow) return { label: '', source: '' };
+
+    var values = sheet.getRange(startRow, dateCol, lastRow - startRow + 1, 1).getValues();
+    var months = {};
+    values.forEach(function (row) {
+      var key = monthKey(row[0]);
+      if (key) months[key] = true;
+    });
+    var keys = Object.keys(months).sort();
+    if (keys.length !== 1) return { label: '', source: keys.length ? 'AMBIGUOUS_ORDER_DATE' : '' };
+    return { label: monthLabel(keys[0]), source: sheetName + '!' + columnLabel(dateCol) + startRow + ':' + columnLabel(dateCol) + lastRow };
+  }
+
+  function periodLabelFromText(value) {
+    var text = String(value || '');
+    var names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    for (var i = 0; i < names.length; i++) {
+      var match = text.match(new RegExp(names[i] + "[^0-9]*(20)?(\\d{2})", 'i'));
+      if (match) return names[i] + "'" + match[2];
+    }
+    return '';
+  }
+
+  function monthKey(value) {
+    var date = value instanceof Date ? value : null;
+    if (!date && typeof value === 'number' && isFinite(value)) {
+      date = new Date(Date.UTC(1899, 11, 30) + Math.round(value) * 86400000);
+    }
+    if (!date || isNaN(date.getTime())) return '';
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+  }
+
+  function monthLabel(key) {
+    var names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var parts = key.split('-');
+    return names[Number(parts[1]) - 1] + "'" + parts[0].slice(-2);
   }
 
   return { sync: sync };
