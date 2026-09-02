@@ -51,7 +51,10 @@ SIP.RelationshipEngine = (function () {
       (result.records||[]).forEach(function(r){if(r.metric_id!=='SALES_AMOUNT')return;if(r.sr_id&&!r.tso_id)orphans['SR|'+r.sr_id]=true;if(r.tso_id&&!r.rsm_id)orphans['TSO|'+r.tso_id]=true;});
     });
     var orphanCount=Object.keys(orphans).length;
-    if(orphanCount)diagnostics.issue('ERROR','HIERARCHY_ORPHAN','Sales hierarchy contains orphan entities',{count:orphanCount,sample:Object.keys(orphans).slice(0,20)});
+    // Missing upstream assignments reduce hierarchy coverage but do not invalidate
+    // the underlying sales facts or company-level totals. Keep them visible in
+    // quality diagnostics without blocking an otherwise valid dashboard cache.
+    if(orphanCount)diagnostics.issue('WARN','HIERARCHY_ORPHAN','Sales hierarchy contains orphan entities',{count:orphanCount,sample:Object.keys(orphans).slice(0,20)});
     if(identity.aliases)diagnostics.issue('WARN','EMPLOYEE_ALIAS_RECONCILED','Name-key employee aliases were safely mapped to their single numeric identity',{aliases:identity.aliases});
     if(conflicts)diagnostics.issue('WARN','HIERARCHY_RECONCILED','Conflicting source hierarchy assignments were reconciled deterministically',{conflicts:conflicts,recordsCorrected:changes,policy:'SALES_SOURCE_THEN_MAJORITY'});
     return{conflictsFound:conflicts,conflictsRemaining:0,orphanRecords:orphanCount,duplicateIdentities:0,homonymGroups:identity.homonyms,employeeAliasesResolved:identity.aliases,recordsCorrected:changes,policy:'SAFE_ID_ALIAS_THEN_SALES_SOURCE_THEN_MAJORITY',entities:Object.keys(winners).length};

@@ -552,6 +552,13 @@ test('uses a selected-period target fact to resolve a zero-activity SR hierarchy
   equal(result.staleAssignmentsExcluded,1);equal(hierarchy.hierarchyAssignments[0].tsoId,'EMPLOYEE:4');
 });
 
+test('keeps orphan sales facts publishable as a hierarchy coverage warning',()=>{
+  const diagnostics=new SIP.Diagnostics();
+  SIP.RelationshipEngine.build([{sourceId:'SRC_SALES_MONTHLY',records:[{metric_id:'SALES_AMOUNT',sr_id:'EMPLOYEE:1',tso_id:'',record_id:'S1'}],dimensions:{}}],diagnostics);
+  const orphan=diagnostics.issues.find(x=>x.code==='HIERARCHY_ORPHAN');
+  ok(orphan);equal(orphan.severity,'WARN');
+});
+
 test('joins HR Attendance by stable SR ID and explicit selected-month dates',()=>{
   const weekdays=Array(42).fill('');weekdays[6]='Wed';weekdays[7]='Thu';weekdays[8]='Fri';weekdays[41]='month_start';
   const header=Array(42).fill('');['RSM ID','RSM Name','TSO ID','TSO Name','SR ID','SR Name','1','2','3'].forEach((x,i)=>header[i]=x);header[41]='2026-07-01';

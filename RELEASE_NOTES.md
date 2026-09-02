@@ -1,5 +1,11 @@
 # Release Notes
 
+## 3.7.5 - Empty Cache Recovery
+
+- Automatically starts one controlled refresh when the public dashboard finds no certified KPI cache.
+- Treats missing upstream hierarchy assignments as a visible coverage warning while retaining valid company and SR sales facts.
+- Preserves strict certification for calculation, period, source, persistence, and unresolved hierarchy-conflict errors.
+
 ## 3.7.4 - External Sync Period Repair
 
 - Derives the reporting month from the source ERP `Raw Data` order dates when the source workbook title has no month/year.
